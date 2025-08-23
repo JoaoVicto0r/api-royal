@@ -1,0 +1,1550 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ApiConfigs {
+  id               String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionId        Int?
+  name             String     @default("") @db.VarChar(255)
+  isActive         Boolean    @default(true)
+  token            String?    @db.VarChar(255)
+  userId           Int?
+  tenantId         Int        @default(1)
+  urlServiceStatus String?
+  urlMessageStatus String?
+  createdAt        DateTime   @db.Timestamptz(6)
+  updatedAt        DateTime   @db.Timestamptz(6)
+  authToken        String?
+  Whatsapps        Whatsapps? @relation(fields: [sessionId], references: [id])
+  Tenants          Tenants    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  Users            Users?     @relation(fields: [userId], references: [id])
+}
+
+model ApiMessages {
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  messageId   String?    @db.VarChar(255)
+  externalKey String?    @db.VarChar(255)
+  body        String
+  ack         Int        @default(0)
+  number      String     @db.VarChar(255)
+  mediaName   String?
+  timestamp   Int?
+  sessionId   Int?
+  tenantId    Int        @default(1)
+  messageWA   Json?
+  apiConfig   Json?
+  createdAt   DateTime   @db.Timestamptz(6)
+  updatedAt   DateTime   @db.Timestamptz(6)
+  mediaUrl    String?
+  Whatsapps   Whatsapps? @relation(fields: [sessionId], references: [id])
+  Tenants     Tenants    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model AutoReply {
+  id           Int          @id @default(autoincrement())
+  name         String       @db.VarChar(255)
+  action       Int          @default(0)
+  userId       Int?
+  createdAt    DateTime     @db.Timestamptz(6)
+  updatedAt    DateTime     @db.Timestamptz(6)
+  isActive     Boolean      @default(true)
+  celularTeste String?      @db.VarChar(255)
+  tenantId     Int          @default(1)
+  Tenants      Tenants      @relation(fields: [tenantId], references: [id])
+  Users        Users?       @relation(fields: [userId], references: [id])
+  StepsReply   StepsReply[]
+}
+
+model AutoReplyLogs {
+  id                Int       @id @default(autoincrement())
+  autoReplyId       Int
+  autoReplyName     String    @db.VarChar(255)
+  stepsReplyId      Int
+  stepsReplyMessage String    @db.VarChar(255)
+  wordsReply        String    @db.VarChar(255)
+  contactId         Int?
+  ticketId          Int
+  createdAt         DateTime  @db.Timestamptz(6)
+  updatedAt         DateTime  @db.Timestamptz(6)
+  Contacts          Contacts? @relation(fields: [contactId], references: [id], onDelete: Restrict)
+  Tickets           Tickets   @relation(fields: [ticketId], references: [id])
+}
+
+model BackupConfigs {
+  id                 Int      @id @default(autoincrement())
+  storageType        String   @db.VarChar(255)
+  localPath          String?
+  s3Bucket           String?  @db.VarChar(255)
+  s3Region           String?  @db.VarChar(255)
+  s3AccessKeyId      String?  @db.VarChar(255)
+  s3SecretAccessKey  String?  @db.VarChar(255)
+  ftpHost            String?  @db.VarChar(255)
+  ftpPort            Int?
+  ftpUsername        String?  @db.VarChar(255)
+  ftpPassword        String?  @db.VarChar(255)
+  ftpPath            String?  @db.VarChar(255)
+  sftpHost           String?  @db.VarChar(255)
+  sftpPort           Int?
+  sftpUsername       String?  @db.VarChar(255)
+  sftpPassword       String?  @db.VarChar(255)
+  sftpPrivateKey     String?
+  sftpPath           String?  @db.VarChar(255)
+  compression        Boolean  @default(true)
+  encryption         Boolean  @default(false)
+  encryptionPassword String?  @db.VarChar(255)
+  retentionDays      Int      @default(30)
+  isActive           Boolean  @default(true)
+  description        String?
+  createdAt          DateTime @db.Timestamptz(6)
+  updatedAt          DateTime @db.Timestamptz(6)
+  tenantId           Int      @unique(map: "backup_configs_tenantId_unique")
+  Tenants            Tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([storageType], map: "backup_configs_storage_type")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model BackupResults {
+  id              Int                           @id @default(autoincrement())
+  tenantId        Int
+  tenantName      String                        @db.VarChar(255)
+  backupType      enum_BackupResults_backupType @default(api)
+  databaseSuccess Boolean                       @default(false)
+  filesSuccess    Boolean                       @default(false)
+  databaseSize    BigInt?
+  filesSize       BigInt?
+  totalSize       BigInt?
+  databaseError   String?
+  filesError      String?
+  backupPath      String?                       @db.VarChar(255)
+  duration        Int?
+  createdAt       DateTime                      @db.Timestamptz(6)
+  updatedAt       DateTime                      @db.Timestamptz(6)
+
+  @@index([backupType], map: "backup_results_backup_type")
+  @@index([createdAt], map: "backup_results_created_at")
+  @@index([databaseSuccess, filesSuccess], map: "backup_results_database_success_files_success")
+  @@index([tenantId], map: "backup_results_tenant_id")
+}
+
+model Baileys {
+  id         Int      @default(autoincrement())
+  whatsappId Int
+  contacts   Json?
+  chats      Json?
+  createdAt  DateTime @db.Timestamptz(6)
+  updatedAt  DateTime @db.Timestamptz(6)
+
+  @@id([id, whatsappId])
+}
+
+model BaileysSessions {
+  id         Int      @default(autoincrement())
+  whatsappId Int
+  value      Json?    @db.Json
+  name       String?  @db.VarChar(255)
+  createdAt  DateTime @db.Timestamptz(6)
+  updatedAt  DateTime @db.Timestamptz(6)
+
+  @@id([id, whatsappId])
+}
+
+model BanLists {
+  id        Int      @id @default(autoincrement())
+  groupId   String   @db.VarChar(255)
+  number    String
+  userId    Int?
+  tenantId  Int
+  createdAt DateTime @db.Timestamptz(6)
+  updatedAt DateTime @db.Timestamptz(6)
+  Tenants   Tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  Users     Users?   @relation(fields: [userId], references: [id])
+}
+
+model BirthdayMessagesSents {
+  id         Int       @id @default(autoincrement())
+  contactId  Int
+  whatsappId Int
+  tenantId   Int
+  sentAt     DateTime  @db.Timestamptz(6)
+  updatedAt  DateTime  @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @db.Timestamptz(6)
+  Contacts   Contacts  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  Tenants    Tenants   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  Whatsapps  Whatsapps @relation(fields: [whatsappId], references: [id], onDelete: Cascade)
+}
+
+model CallLogs {
+  id                Int      @id @default(autoincrement())
+  phoneNumber       String   @db.VarChar(255)
+  callStatus        String   @db.VarChar(255)
+  callDuration      Int?
+  originNumber      String   @db.VarChar(255)
+  destinationNumber String   @db.VarChar(255)
+  userId            Int?
+  tenantId          Int?
+  createdAt         DateTime @db.Timestamptz(6)
+  updatedAt         DateTime @db.Timestamptz(6)
+  Tenants           Tenants? @relation(fields: [tenantId], references: [id])
+  Users             Users?   @relation(fields: [userId], references: [id])
+}
+
+model CampaignContacts {
+  id            Int       @id @default(autoincrement())
+  messageRandom String    @db.VarChar(255)
+  body          String?
+  mediaName     String?   @db.VarChar(255)
+  messageId     String?   @db.VarChar(255)
+  jobId         String?   @db.VarChar(255)
+  ack           Int       @default(0)
+  timestamp     Int?
+  contactId     Int?
+  campaignId    Int       @default(0)
+  createdAt     DateTime  @db.Timestamptz(6)
+  updatedAt     DateTime  @db.Timestamptz(6)
+  Campaigns     Campaigns @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  Contacts      Contacts? @relation(fields: [contactId], references: [id], onDelete: Cascade)
+}
+
+model Campaigns {
+  id               Int                @id @default(autoincrement())
+  name             String             @db.VarChar(255)
+  start            DateTime           @db.Timestamptz(6)
+  status           String             @default("pending") @db.VarChar(255)
+  sessionId        Int?
+  message1         String
+  message2         String
+  message3         String
+  mediaUrl         String?            @db.VarChar(255)
+  mediaType        String?            @db.VarChar(255)
+  userId           Int?
+  tenantId         Int                @default(1)
+  createdAt        DateTime           @db.Timestamptz(6)
+  updatedAt        DateTime           @db.Timestamptz(6)
+  delay            Int                @default(20)
+  CampaignContacts CampaignContacts[]
+  Whatsapps        Whatsapps?         @relation(fields: [sessionId], references: [id])
+  Tenants          Tenants            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  Users            Users?             @relation(fields: [userId], references: [id])
+}
+
+model ChatFlow {
+  id           Int         @id @default(autoincrement())
+  name         String      @default("") @db.VarChar(255)
+  flow         Json        @default("{}") @db.Json
+  isActive     Boolean     @default(true)
+  celularTeste String?     @db.VarChar(255)
+  userId       Int?
+  tenantId     Int         @default(1)
+  createdAt    DateTime    @db.Timestamptz(6)
+  updatedAt    DateTime    @db.Timestamptz(6)
+  isDeleted    Boolean?    @default(false)
+  Tenants      Tenants     @relation(fields: [tenantId], references: [id])
+  Users        Users?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Whatsapps    Whatsapps[]
+}
+
+model ContactCustomFields {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(255)
+  value     String   @db.VarChar(255)
+  contactId Int
+  createdAt DateTime @db.Timestamptz(6)
+  updatedAt DateTime @db.Timestamptz(6)
+  Contacts  Contacts @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([contactId], map: "contactcustomfields_contactid_idx")
+}
+
+model ContactTags {
+  id        Int      @id @default(autoincrement())
+  tagId     Int
+  contactId Int
+  tenantId  Int
+  createdAt DateTime @db.Timestamptz(6)
+  updatedAt DateTime @db.Timestamptz(6)
+  Contacts  Contacts @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  Tags      Tags     @relation(fields: [tagId], references: [id])
+  Tenants   Tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([contactId, tagId, tenantId], map: "unique_contact_tag_tenant")
+  @@index([contactId], map: "contacttags_contactid_idx")
+  @@index([contactId], map: "idx_contactTag_contact_id")
+  @@index([tagId], map: "idx_contactTag_tagId")
+  @@index([tagId], map: "idx_contactTag_tag_id")
+}
+
+model ContactWallets {
+  id        Int      @id @default(autoincrement())
+  walletId  Int
+  contactId Int
+  tenantId  Int
+  createdAt DateTime @db.Timestamptz(6)
+  updatedAt DateTime @db.Timestamptz(6)
+  Contacts  Contacts @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  Tenants   Tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  Users     Users    @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@unique([contactId, walletId, tenantId], map: "unique_contact_wallet_tenant")
+  @@index([contactId], map: "contactwallets_contactid_idx")
+  @@index([walletId, contactId], map: "idx_contactwallets_wallet_contact")
+}
+
+model Contacts {
+  id                    Int                     @id @default(autoincrement())
+  name                  String                  @db.VarChar(255)
+  number                String?                 @db.VarChar(255)
+  profilePicUrl         String?
+  createdAt             DateTime                @db.Timestamptz(6)
+  updatedAt             DateTime                @db.Timestamptz(6)
+  email                 String?                 @db.VarChar(255)
+  isGroup               Boolean                 @default(false)
+  tenantId              Int                     @default(1)
+  isWAContact           Boolean?
+  isUser                Boolean?
+  pushname              String?                 @db.VarChar(255)
+  telegramId            BigInt?
+  instagramPK           BigInt?
+  messengerId           String?
+  kanban                Int?
+  blocked               Boolean?                @default(false)
+  birthdayDate          String?                 @db.VarChar(255)
+  cpf                   String?                 @db.VarChar(255)
+  firstName             String?                 @db.VarChar(255)
+  businessName          String?                 @db.VarChar(255)
+  lastName              String?                 @db.VarChar(255)
+  hubWhatsapp           String?
+  hubTelegram           String?
+  hubWidget             String?
+  hubWebchat            String?
+  hubEmail              String?
+  hubSms                String?
+  hubMercadolivre       String?
+  hubTiktok             String?
+  hubLikedin            String?
+  hubIfood              String?
+  hubTwitter            String?
+  hubOlx                String?
+  hubYoutube            String?
+  chatbotBlocked        Boolean?                @default(false)
+  webchatId             String?
+  lid                   String?                 @db.VarChar(255)
+  AutoReplyLogs         AutoReplyLogs[]
+  BirthdayMessagesSents BirthdayMessagesSents[]
+  CampaignContacts      CampaignContacts[]
+  ContactCustomFields   ContactCustomFields[]
+  ContactTags           ContactTags[]
+  ContactWallets        ContactWallets[]
+  Tenants               Tenants                 @relation(fields: [tenantId], references: [id])
+  Messages              Messages[]
+  MessagesOffLine       MessagesOffLine[]
+  Opportunitys          Opportunitys[]
+  Tickets               Tickets[]
+
+  @@unique([number, tenantId], map: "contacts_number_tenantid")
+  @@index([id], map: "idx_contact_id")
+  @@index([name], map: "idx_contact_name")
+  @@index([number], map: "idx_contact_number")
+  @@index([tenantId], map: "idx_contact_tenant_id")
+  @@index([tenantId], map: "idx_contacts_tenant")
+}
+
+model FarewellMessages {
+  id        Int      @id @default(autoincrement())
+  groupId   String   @db.VarChar(255)
+  message   String
+  userId    Int?
+  tenantId  Int
+  createdAt DateTime @db.Timestamptz(6)
+  updatedAt DateTime @db.Timestamptz(6)
+  Tenants   Tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  Users     Users?   @relation(fields: [userId], references: [id])
+}
+
+model FarewellPrivateMessages {
+  id        Int      @id @default(autoincrement())
+  message   String
+  userId    Int?
+  tenantId  Int
+  createdAt DateTime @db.Timestamptz(6)
+  updatedAt DateTime @db.Timestamptz(6)
+  Tenants   Tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  Users     Users?   @relation(fields: [userId], references: [id])
+}
+
+model FastReply {
+  id        Int      @id @default(autoincrement())
+  key       String   @db.VarChar(255)
+  message   String
+  userId    Int?
+  tenantId  Int      @default(1)
+  createdAt DateTime @db.Timestamptz(6)
+  updatedAt DateTime @db.Timestamptz(6)
+  media     String?
+  voice     String?
+  Tenants   Tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  Users     Users?   @relation(fields: [userId], references: [id])
+}
+
+model GhostLists {
+  id        Int      @id @default(autoincrement())
+  shortcut  String
+  message   String
+  userId    Int?
+  tenantId  Int
+  createdAt DateTime @db.Timestamptz(6)
+  updatedAt DateTime @db.Timestamptz(6)
+  Tenants   Tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  Users     Users?   @relation(fields: [userId], references: [id])
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model GoogleCalendars {
+  id                 Int       @id @default(autoincrement())
+  tenantId           Int
+  googleClientId     String    @db.VarChar(255)
+  name               String    @db.VarChar(255)
+  googleClientSecret String
+  googleAccessToken  String?
+  googleRefreshToken String?
+  tokenExpiresAt     DateTime? @db.Timestamptz(6)
+  isActive           Boolean   @default(false)
+  notes              String?
+  createdAt          DateTime  @db.Timestamptz(6)
+  updatedAt          DateTime  @db.Timestamptz(6)
+  Tenants            Tenants   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt], map: "google_calendars_created_at")
+  @@index([isActive], map: "google_calendars_is_active")
+  @@index([tenantId], map: "google_calendars_tenant_id")
+}
+
+model GreetingMessages {
+  id        Int      @id @default(autoincrement())
+  groupId   String   @db.VarChar(255)
+  message   String
+  userId    Int?
+  tenantId  Int
+  createdAt DateTime @db.Timestamptz(6)
+  updatedAt DateTime @db.Timestamptz(6)
+  Tenants   Tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  Users     Users?   @relation(fields: [userId], references: [id])
+}
+
+model GroupLinkLists {
+  id           Int      @id @default(autoincrement())
+  groupId      String   @db.VarChar(255)
+  name         String
+  link         String
+  participants String
+  userId       Int?
+  tenantId     Int
+  createdAt    DateTime @db.Timestamptz(6)
+  updatedAt    DateTime @db.Timestamptz(6)
+  Tenants      Tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  Users        Users?   @relation(fields: [userId], references: [id])
+}
+
+model GroupMessages {
+  id                 Int                  @id @default(autoincrement())
+  group              String               @db.VarChar(255)
+  userId             Int?
+  createdAt          DateTime             @db.Timestamptz(6)
+  updatedAt          DateTime             @db.Timestamptz(6)
+  tenantId           Int                  @default(1)
+  isActive           Boolean              @default(true)
+  Tenants            Tenants              @relation(fields: [tenantId], references: [id])
+  Users              Users?               @relation(fields: [userId], references: [id])
+  PrivateMessage     PrivateMessage[]
+  UsersPrivateGroups UsersPrivateGroups[]
+}
+
+model Kanbans {
+  id        Int      @id @default(autoincrement())
+  name      String?  @db.VarChar(255)
+  tenantId  Int
+  createdAt DateTime @db.Timestamptz(6)
+  updatedAt DateTime @db.Timestamptz(6)
+  position  Int?
+  Tenants   Tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model LicenseActivationLogs {
+  id          Int      @id @default(autoincrement())
+  licenseCode String   @db.VarChar(255)
+  backendUrl  String   @db.VarChar(255)
+  status      String?  @db.VarChar(255)
+  message     String?  @db.VarChar(255)
+  createdAt   DateTime @db.Timestamptz(6)
+  updatedAt   DateTime @db.Timestamptz(6)
+}
+
+model LicenseRequestLogs {
+  id           Int      @id @default(autoincrement())
+  licenseCode  String   @db.VarChar(255)
+  responseData Json
+  createdAt    DateTime @db.Timestamptz(6)
+  updatedAt    DateTime @db.Timestamptz(6)
+}
+
+model Licenses {
+  id          Int      @id @default(autoincrement())
+  license     String?  @default("active") @db.VarChar(255)
+  licenseData Json?
+  createdAt   DateTime @db.Timestamptz(6)
+  updatedAt   DateTime @db.Timestamptz(6)
+}
+
+model LogTickets {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  ticketId  Int
+  queueId   Int?
+  type      String   @db.VarChar(255)
+  createdAt DateTime @db.Timestamptz(6)
+  updatedAt DateTime @db.Timestamptz(6)
+  tenantId  Int?
+  Queues    Queues?  @relation(fields: [queueId], references: [id], onDelete: Cascade)
+  Tenants   Tenants? @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  Tickets   Tickets  @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  Users     Users?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model MessageUpserts {
+  id          Int        @id @default(autoincrement())
+  body        String?
+  mediaType   String?    @db.VarChar(255)
+  mediaUrl    String?    @db.VarChar(255)
+  ticketId    Int?
+  createdAt   DateTime   @db.Timestamptz(6)
+  updatedAt   DateTime   @db.Timestamptz(6)
+  tenantId    Int?
+  isEdited    Boolean    @default(false)
+  isDeleted   Boolean    @default(false)
+  isForwarded Boolean    @default(false)
+  remoteJid   String     @db.VarChar(255)
+  wid         String?    @db.VarChar(255)
+  dataJson    String
+  whatsappId  Int?
+  imported    Boolean    @default(false)
+  ignore      Boolean    @default(false)
+  fromMe      Boolean    @default(false)
+  Tenants     Tenants?   @relation(fields: [tenantId], references: [id])
+  Tickets     Tickets?   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  Whatsapps   Whatsapps? @relation(fields: [whatsappId], references: [id])
+}
+
+model Messages {
+  id               String            @id @db.VarChar(255)
+  body             String
+  ack              Int               @default(0)
+  read             Boolean           @default(false)
+  mediaType        String?           @db.VarChar(255)
+  mediaUrl         String?           @db.VarChar(255)
+  ticketId         Int
+  createdAt        DateTime          @db.Timestamptz(6)
+  updatedAt        DateTime          @db.Timestamptz(6)
+  fromMe           Boolean           @default(false)
+  isDeleted        Boolean           @default(false)
+  contactId        Int?
+  quotedMsgId      String?           @db.VarChar(255)
+  timestamp        BigInt?
+  userId           Int?
+  sendType         String?           @db.VarChar(255)
+  messageId        String?           @db.VarChar(255)
+  scheduleDate     DateTime?         @db.Timestamptz(6)
+  status           String?           @db.VarChar(255)
+  wabaMediaId      String?
+  tenantId         Int?
+  idFront          String?           @db.VarChar(255)
+  reaction         String?           @default("")
+  reactionFromMe   String?           @default("")
+  edition          String?           @default("")
+  syncTime         String?           @default("")
+  isSticker        Boolean           @default(false)
+  templateLanguage String?           @default("")
+  templateName     String?           @default("")
+  remoteJid        String?           @default("") @db.VarChar(255)
+  isDelayed        Boolean?
+  dataJson         String?
+  importedAt       DateTime?         @db.Timestamptz(6)
+  Contacts         Contacts?         @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  Tenants          Tenants?          @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  Tickets          Tickets           @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  Users            Users?            @relation(fields: [userId], references: [id])
+  MessagesOffLine  MessagesOffLine[]
+
+  @@index([contactId], map: "idx_Messages_contact_id")
+  @@index([quotedMsgId], map: "idx_message_quoted_id")
+  @@index([tenantId], map: "idx_message_tenant_id")
+  @@index([ticketId], map: "idx_message_ticket_id")
+  @@index([fromMe, isDeleted, status, messageId, scheduleDate], map: "messages_fromme_del_sched_idx")
+}
+
+model MessagesOffLine {
+  id          Int       @id @default(autoincrement())
+  body        String
+  ack         Int       @default(0)
+  read        Boolean   @default(false)
+  mediaType   String?   @db.VarChar(255)
+  mediaUrl    String?   @db.VarChar(255)
+  userId      Int?
+  ticketId    Int
+  fromMe      Boolean   @default(false)
+  isDeleted   Boolean   @default(false)
+  contactId   Int?
+  quotedMsgId String?   @db.VarChar(255)
+  createdAt   DateTime  @db.Timestamptz(6)
+  updatedAt   DateTime  @db.Timestamptz(6)
+  Contacts    Contacts? @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  Messages    Messages? @relation(fields: [quotedMsgId], references: [id])
+  Tickets     Tickets   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  Users       Users?    @relation(fields: [userId], references: [id])
+}
+
+model Notifications {
+  id        Int      @id @default(autoincrement())
+  message   String
+  isRead    Boolean  @default(false)
+  userId    Int?
+  tenantId  Int
+  createdAt DateTime @db.Timestamptz(6)
+  updatedAt DateTime @db.Timestamptz(6)
+  Tenants   Tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  Users     Users?   @relation(fields: [userId], references: [id])
+}
+
+model Opportunitys {
+  id                 Int                  @id @default(autoincrement())
+  name               String               @db.VarChar(255)
+  value              Decimal              @default(0) @db.Decimal(12, 2)
+  description        String?
+  responsibleId      Int
+  contactId          Int
+  stageId            Int
+  pipelineId         Int
+  tenantId           Int
+  closingForecast    DateTime?            @db.Timestamptz(6)
+  createdAt          DateTime             @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime?            @db.Timestamptz(6)
+  status             String               @default("open") @db.VarChar(255)
+  Contacts           Contacts             @relation(fields: [contactId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Pipelines          Pipelines            @relation(fields: [pipelineId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Users              Users                @relation(fields: [responsibleId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Stages             Stages               @relation(fields: [stageId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Tenants            Tenants              @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  PipelineActionLogs PipelineActionLogs[]
+
+  @@index([closingForecast], map: "idx_opportunity_closing_forecast")
+  @@index([contactId], map: "idx_opportunity_contact")
+  @@index([createdAt], map: "idx_opportunity_created_at")
+  @@index([pipelineId, stageId], map: "idx_opportunity_pipeline_stage")
+  @@index([responsibleId, status], map: "idx_opportunity_responsible_status")
+  @@index([status], map: "idx_opportunity_status")
+  @@index([tenantId], map: "idx_opportunity_tenant")
+  @@index([value], map: "idx_opportunity_value")
+}
+
+model ParticipantsLists {
+  id        Int      @id @default(autoincrement())
+  groupId   String   @db.VarChar(255)
+  number    String
+  userId    Int?
+  tenantId  Int
+  name      String
+  createdAt DateTime @db.Timestamptz(6)
+  updatedAt DateTime @db.Timestamptz(6)
+  Tenants   Tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  Users     Users?   @relation(fields: [userId], references: [id])
+}
+
+model PipelineActionLogs {
+  id               Int                            @id @default(autoincrement())
+  opportunityId    Int
+  pipelineActionId Int
+  tenantId         Int
+  status           enum_PipelineActionLogs_status @default(pending)
+  errorMessage     String?
+  executedAt       DateTime?                      @db.Timestamptz(6)
+  createdAt        DateTime                       @db.Timestamptz(6)
+  updatedAt        DateTime                       @db.Timestamptz(6)
+  flowActionId     String?                        @db.VarChar(255)
+  Opportunitys     Opportunitys                   @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  PipelineActions  PipelineActions                @relation(fields: [pipelineActionId], references: [id], onDelete: Cascade)
+  Tenants          Tenants                        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt], map: "pipeline_action_logs_created_at")
+  @@index([opportunityId], map: "pipeline_action_logs_opportunity_id")
+  @@index([pipelineActionId], map: "pipeline_action_logs_pipeline_action_id")
+  @@index([status], map: "pipeline_action_logs_status")
+  @@index([tenantId], map: "pipeline_action_logs_tenant_id")
+  @@index([updatedAt], map: "pipeline_action_logs_updated_at")
+}
+
+model PipelineActions {
+  id                                           Int                             @id @default(autoincrement())
+  name                                         String                          @db.VarChar(255)
+  description                                  String?
+  daysToTrigger                                Int
+  actionType                                   enum_PipelineActions_actionType
+  actionContent                                String?
+  pipelineId                                   Int?
+  stageId                                      Int?
+  targetStageId                                Int?
+  tagId                                        Int?
+  walletId                                     Int?
+  tenantId                                     Int?
+  active                                       Boolean?                        @default(true)
+  createdAt                                    DateTime                        @db.Timestamptz(6)
+  updatedAt                                    DateTime                        @db.Timestamptz(6)
+  whatsappId                                   Int?
+  PipelineActionLogs                           PipelineActionLogs[]
+  Pipelines                                    Pipelines?                      @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  Stages_PipelineActions_stageIdToStages       Stages?                         @relation("PipelineActions_stageIdToStages", fields: [stageId], references: [id], onDelete: Cascade)
+  Tags                                         Tags?                           @relation(fields: [tagId], references: [id])
+  Stages_PipelineActions_targetStageIdToStages Stages?                         @relation("PipelineActions_targetStageIdToStages", fields: [targetStageId], references: [id])
+  Tenants                                      Tenants?                        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  Users                                        Users?                          @relation(fields: [walletId], references: [id])
+  Whatsapps                                    Whatsapps?                      @relation(fields: [whatsappId], references: [id])
+}
+
+model Pipelines {
+  id              Int               @id @default(autoincrement())
+  name            String            @db.VarChar(255)
+  tenantId        Int
+  createdAt       DateTime          @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime          @default(now()) @db.Timestamptz(6)
+  Opportunitys    Opportunitys[]
+  PipelineActions PipelineActions[]
+  Tenants         Tenants           @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Stages          Stages[]
+}
+
+model Plans {
+  id          Int      @id @default(autoincrement())
+  value       Decimal? @db.Decimal(10, 2)
+  connections Int?
+  users       Int?
+  userId      Int?
+  tenantId    Int
+  createdAt   DateTime @db.Timestamptz(6)
+  updatedAt   DateTime @db.Timestamptz(6)
+  trial       String?
+  trialPeriod Int?
+  Tenants     Tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  Users       Users?   @relation(fields: [userId], references: [id])
+}
+
+model PrivateMessage {
+  id                                     BigInt                     @id @default(autoincrement())
+  text                                   String
+  read                                   Boolean                    @default(false)
+  mediaType                              String?                    @db.VarChar(255)
+  mediaUrl                               String?                    @db.VarChar(255)
+  senderId                               Int?
+  receiverId                             Int?
+  groupId                                Int?
+  tenantId                               Int                        @default(1)
+  timestamp                              BigInt
+  createdAt                              DateTime                   @db.Timestamptz(6)
+  updatedAt                              DateTime                   @db.Timestamptz(6)
+  GroupMessages                          GroupMessages?             @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  Users_PrivateMessage_receiverIdToUsers Users?                     @relation("PrivateMessage_receiverIdToUsers", fields: [receiverId], references: [id])
+  Users_PrivateMessage_senderIdToUsers   Users?                     @relation("PrivateMessage_senderIdToUsers", fields: [senderId], references: [id])
+  Tenants                                Tenants                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ReadPrivateMessageGroups               ReadPrivateMessageGroups[]
+}
+
+model Queues {
+  id                Int                 @id @default(autoincrement())
+  queue             String              @db.VarChar(255)
+  userId            Int?
+  createdAt         DateTime            @db.Timestamptz(6)
+  updatedAt         DateTime            @db.Timestamptz(6)
+  isActive          Boolean             @default(true)
+  tenantId          Int                 @default(1)
+  LogTickets        LogTickets[]
+  Tenants           Tenants             @relation(fields: [tenantId], references: [id])
+  Users             Users?              @relation(fields: [userId], references: [id])
+  StepsReplyActions StepsReplyActions[]
+  Tickets           Tickets[]
+  UsersQueues       UsersQueues[]
+  Whatsapps         Whatsapps[]
+
+  @@index([id], map: "idx_queues_id")
+}
+
+model ReadPrivateMessageGroups {
+  id                 Int                @id @default(autoincrement())
+  internalMessageId  BigInt?
+  userGroupId        Int
+  createdAt          DateTime           @db.Timestamptz(6)
+  updatedAt          DateTime           @db.Timestamptz(6)
+  PrivateMessage     PrivateMessage?    @relation(fields: [internalMessageId], references: [id])
+  UsersPrivateGroups UsersPrivateGroups @relation(fields: [userGroupId], references: [id], onDelete: Cascade)
+}
+
+model Reasons {
+  id        Int      @id @default(autoincrement())
+  name      String?  @db.VarChar(255)
+  tenantId  Int
+  createdAt DateTime @db.Timestamptz(6)
+  updatedAt DateTime @db.Timestamptz(6)
+  Tenants   Tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model SequelizeMeta {
+  name String @id @db.VarChar(255)
+}
+
+model Settings {
+  key       String   @db.VarChar(255)
+  value     String
+  createdAt DateTime @db.Timestamptz(6)
+  updatedAt DateTime @db.Timestamptz(6)
+  tenantId  Int      @default(1)
+  id        Int      @unique
+
+  @@unique([tenantId, key], map: "settings_tenant_key_idx")
+  @@index([tenantId], map: "settings_tenant_idx")
+}
+
+model Stages {
+  id                                                    Int               @id @default(autoincrement())
+  name                                                  String            @db.VarChar(255)
+  color                                                 String            @db.VarChar(255)
+  order                                                 Int
+  pipelineId                                            Int
+  tenantId                                              Int
+  createdAt                                             DateTime          @default(now()) @db.Timestamptz(6)
+  updatedAt                                             DateTime          @default(now()) @db.Timestamptz(6)
+  Opportunitys                                          Opportunitys[]
+  PipelineActions_PipelineActions_stageIdToStages       PipelineActions[] @relation("PipelineActions_stageIdToStages")
+  PipelineActions_PipelineActions_targetStageIdToStages PipelineActions[] @relation("PipelineActions_targetStageIdToStages")
+  Pipelines                                             Pipelines         @relation(fields: [pipelineId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  Tenants                                               Tenants           @relation(fields: [tenantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model StepsReply {
+  id                                                          Int                 @id @default(autoincrement())
+  reply                                                       String              @db.VarChar(255)
+  idAutoReply                                                 Int?
+  userId                                                      Int?
+  createdAt                                                   DateTime            @db.Timestamptz(6)
+  updatedAt                                                   DateTime            @db.Timestamptz(6)
+  initialStep                                                 Boolean?            @default(false)
+  AutoReply                                                   AutoReply?          @relation(fields: [idAutoReply], references: [id], onDelete: Cascade)
+  Users                                                       Users?              @relation(fields: [userId], references: [id])
+  StepsReplyActions_StepsReplyActions_nextStepIdToStepsReply  StepsReplyActions[] @relation("StepsReplyActions_nextStepIdToStepsReply")
+  StepsReplyActions_StepsReplyActions_stepReplyIdToStepsReply StepsReplyActions[] @relation("StepsReplyActions_stepReplyIdToStepsReply")
+}
+
+model StepsReplyActions {
+  id                                                   Int         @id @default(autoincrement())
+  stepReplyId                                          Int?
+  words                                                String      @db.VarChar(255)
+  action                                               Int         @default(0)
+  userId                                               Int?
+  createdAt                                            DateTime    @db.Timestamptz(6)
+  updatedAt                                            DateTime    @db.Timestamptz(6)
+  nextStepId                                           Int?
+  queueId                                              Int?
+  userIdDestination                                    Int?
+  replyDefinition                                      String?     @db.VarChar(255)
+  StepsReply_StepsReplyActions_nextStepIdToStepsReply  StepsReply? @relation("StepsReplyActions_nextStepIdToStepsReply", fields: [nextStepId], references: [id], onDelete: Cascade, map: "StepsReplyActions_nextStep_fkey")
+  Queues                                               Queues?     @relation(fields: [queueId], references: [id], onDelete: Restrict)
+  StepsReply_StepsReplyActions_stepReplyIdToStepsReply StepsReply? @relation("StepsReplyActions_stepReplyIdToStepsReply", fields: [stepReplyId], references: [id], onDelete: Cascade)
+  Users_StepsReplyActions_userIdDestinationToUsers     Users?      @relation("StepsReplyActions_userIdDestinationToUsers", fields: [userIdDestination], references: [id], onDelete: Restrict)
+  Users_StepsReplyActions_userIdToUsers                Users?      @relation("StepsReplyActions_userIdToUsers", fields: [userId], references: [id])
+}
+
+model Tags {
+  id              Int               @id @default(autoincrement())
+  tag             String            @db.VarChar(255)
+  isActive        Boolean           @default(true)
+  color           String            @db.VarChar(255)
+  userId          Int?
+  tenantId        Int               @default(1)
+  createdAt       DateTime          @db.Timestamptz(6)
+  updatedAt       DateTime          @db.Timestamptz(6)
+  ContactTags     ContactTags[]
+  PipelineActions PipelineActions[]
+  Tenants         Tenants           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  Users           Users?            @relation(fields: [userId], references: [id])
+
+  @@unique([tag, tenantId], map: "unique_constraint_tag_tenant")
+}
+
+model TenantApis {
+  id        Int      @id @default(autoincrement())
+  apiToken  String
+  tenantId  Int
+  createdAt DateTime @db.Timestamptz(6)
+  updatedAt DateTime @db.Timestamptz(6)
+  Tenants   Tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model Tenants {
+  id                             Int                       @id @default(autoincrement())
+  status                         String                    @default("active") @db.VarChar(255)
+  ownerId                        Int?
+  createdAt                      DateTime                  @db.Timestamptz(6)
+  updatedAt                      DateTime                  @db.Timestamptz(6)
+  name                           String                    @default("") @db.VarChar(255)
+  businessHours                  Json?                     @default("[{\"day\": 0, \"hr1\": \"08:00\", \"hr2\": \"12:00\", \"hr3\": \"14:00\", \"hr4\": \"18:00\", \"type\": \"C\", \"label\": \"Domingo\"}, {\"day\": 1, \"hr1\": \"08:00\", \"hr2\": \"12:00\", \"hr3\": \"14:00\", \"hr4\": \"18:00\", \"type\": \"O\", \"label\": \"Segunda-Feira\"}, {\"day\": 2, \"hr1\": \"08:00\", \"hr2\": \"12:00\", \"hr3\": \"14:00\", \"hr4\": \"18:00\", \"type\": \"O\", \"label\": \"Terça-Feira\"}, {\"day\": 3, \"hr1\": \"08:00\", \"hr2\": \"12:00\", \"hr3\": \"14:00\", \"hr4\": \"18:00\", \"type\": \"O\", \"label\": \"Quarta-Feira\"}, {\"day\": 4, \"hr1\": \"08:00\", \"hr2\": \"12:00\", \"hr3\": \"14:00\", \"hr4\": \"18:00\", \"type\": \"O\", \"label\": \"Quinta-Feira\"}, {\"day\": 5, \"hr1\": \"08:00\", \"hr2\": \"12:00\", \"hr3\": \"14:00\", \"hr4\": \"18:00\", \"type\": \"O\", \"label\": \"Sexta-Feira\"}, {\"day\": 6, \"hr1\": \"08:00\", \"hr2\": \"12:00\", \"hr3\": \"14:00\", \"hr4\": \"18:00\", \"type\": \"C\", \"label\": \"Sábado\"}]")
+  messageBusinessHours           String?                   @default("Olá! Fantástico receber seu contato! No momento estamos ausentes e não poderemos lhe atender, mas vamos priorizar seu atendimento e retornaremos logo mais. Agradecemos muito o contato.")
+  maxUsers                       Int?
+  maxConnections                 Int?
+  asaasToken                     String?
+  asaasCustomerId                String?
+  asaas                          String?
+  metaToken                      String?                   @default("733889dba67c72dd1bb43ea68e7b5e41c4a009c95d19b08f44d570e8f38374a8")
+  bmToken                        String?                   @default("")
+  webhookChecked                 String?                   @default("")
+  showChatBot                    String?                   @default("disabled")
+  maxRetries                     Int?
+  fixConnections                 String?                   @default("disabled")
+  forceAdmin                     String?                   @default("disabled")
+  smsToken                       String?                   @default("")
+  acceptTerms                    Boolean                   @default(false)
+  rating                         Json?                     @default("[{\"label\": \"Ruim\", \"rating\": 0}, {\"label\": \"Regular\", \"rating\": 1}, {\"label\": \"Bom\", \"rating\": 2}, {\"label\": \"Muito Bom\", \"rating\": 3}, {\"label\": \"Excelente\", \"rating\": 4}, {\"label\": \"Incrível\", \"rating\": 5}]")
+  nullTickets                    String?                   @default("disabled")
+  identity                       String?                   @default("")
+  trial                          String?
+  trialPeriod                    Int?
+  systemColors                   Json?                     @default("[{\"label\": \"Neutral\", \"neutral\": \"#E0E1E2\"}, {\"label\": \"Primary\", \"primary\": \"#5c67f2\"}, {\"label\": \"Secondary\", \"secondary\": \"#f5f5f9\"}, {\"label\": \"Accent\", \"accent\": \"#ff5c93\"}, {\"label\": \"Warning\", \"warning\": \"#ffeb3b\"}, {\"label\": \"Negative\", \"negative\": \"#f44336\"}, {\"label\": \"Positive\", \"positive\": \"#25d366\"}, {\"label\": \"Light\", \"light\": \"#8DB1DD\"}]")
+  ticketLimit                    Int?
+  forcePendingUser               String?                   @default("disabled")
+  groupTickets                   String?                   @default("disabled")
+  hubToken                       String?
+  noRedis                        String?                   @default("enabled")
+  wuzapiHost                     String?
+  updateNames                    String?                   @default("disabled")
+  serviceTransfer                String?                   @default("enabled")
+  tenantEmail                    String?
+  tenantLicense                  String?
+  hideUnoficial                  Boolean                   @default(false)
+  privateMessageLimit            Int?
+  conectaSmsToken                String?                   @default("")
+  wavoipAuth                     String?
+  supervisorAdmin                String?                   @default("disabled")
+  evoHost                        String?
+  evoToken                       String?
+  walletExternalInteraction      String?                   @default("enabled")
+  forceOpenChatWindow            String?                   @default("disabled")
+  subscriptionData               String?
+  publicKeyVapid                 String?
+  privateKeyVapid                String?
+  waitProcessExternalInteraction String?                   @default("enabled")
+  showClosedForAll               String?                   @default("disabled")
+  showGroupsForAll               String?                   @default("disabled")
+  audioPlugin                    String?                   @default("disabled")
+  ratingStore                    String?                   @default("Sua avaliação foi armazenada com sucesso.")
+  ratingStoreError               String?                   @default("Não foi possível armazenar sua avaliação.") @db.VarChar(255)
+  ratingStoreAttemp              String?                   @default("Você tem mais uma oportunidade para avaliar esse atendimento enviando um número de 0 a 5. Se uma mensagem com valor diferente ao solicitado for enviada, a sua avaliação não será gravada.") @db.VarChar(255)
+  ignoreIgStories                String?                   @default("disabled")
+  baileysMediaPersist            String?                   @default("enabled")
+  isUpdating                     Boolean                   @default(false)
+  menuVisibility                 Json?                     @default("[{\"grupo\": true, \"massa\": true, \"kanban\": true, \"equipes\": true, \"tarefas\": true, \"campanhas\": true, \"chat-flow\": true, \"relatorios\": true, \"api-service\": true, \"chat-privado\": true}]")
+  audioModule                    String?                   @default("disabled")
+  groqCloud                      String?                   @default("disabled") @db.VarChar(255)
+  groqCloudApiKey                String?                   @db.VarChar(255)
+  groqCloudLanguage              String?                   @db.VarChar(255)
+  groqCloudModel                 String?                   @db.VarChar(255)
+  websocketToken                 String?                   @unique @db.VarChar(255)
+  controlFeatures                String?                   @default("disabled")
+  holidays                       Json?                     @default("[]")
+  evaluationMessage              String?
+  forceReason                    String?                   @default("disabled")
+  listByLastMessage              String?                   @default("disabled")
+  postmanLink                    String?
+  allowPause                     String?                   @default("disabled")
+  useUserBusinessHours           String?                   @default("disabled")
+  vapiToken                      String?
+  forceLogout                    String?                   @default("disabled")
+  masterkey                      String?
+  masterkeyEnabled               String?                   @default("disabled")
+  masterkeyLog                   String?
+  ApiConfigs                     ApiConfigs[]
+  ApiMessages                    ApiMessages[]
+  AutoReply                      AutoReply[]
+  BackupConfigs                  BackupConfigs?
+  BanLists                       BanLists[]
+  BirthdayMessagesSents          BirthdayMessagesSents[]
+  CallLogs                       CallLogs[]
+  Campaigns                      Campaigns[]
+  ChatFlow                       ChatFlow[]
+  ContactTags                    ContactTags[]
+  ContactWallets                 ContactWallets[]
+  Contacts                       Contacts[]
+  FarewellMessages               FarewellMessages[]
+  FarewellPrivateMessages        FarewellPrivateMessages[]
+  FastReply                      FastReply[]
+  GhostLists                     GhostLists[]
+  GoogleCalendars                GoogleCalendars[]
+  GreetingMessages               GreetingMessages[]
+  GroupLinkLists                 GroupLinkLists[]
+  GroupMessages                  GroupMessages[]
+  Kanbans                        Kanbans[]
+  LogTickets                     LogTickets[]
+  MessageUpserts                 MessageUpserts[]
+  Messages                       Messages[]
+  Notifications                  Notifications[]
+  Opportunitys                   Opportunitys[]
+  ParticipantsLists              ParticipantsLists[]
+  PipelineActionLogs             PipelineActionLogs[]
+  PipelineActions                PipelineActions[]
+  Pipelines                      Pipelines[]
+  Plans                          Plans[]
+  PrivateMessage                 PrivateMessage[]
+  Queues                         Queues[]
+  Reasons                        Reasons[]
+  Stages                         Stages[]
+  Tags                           Tags[]
+  TenantApis                     TenantApis[]
+  Users_Tenants_ownerIdToUsers   Users?                    @relation("Tenants_ownerIdToUsers", fields: [ownerId], references: [id], onDelete: Restrict)
+  TicketEvaluations              TicketEvaluations[]
+  TicketNotes                    TicketNotes[]
+  TicketProtocols                TicketProtocols[]
+  TicketShareds                  TicketShareds[]
+  Tickets                        Tickets[]
+  TodoLists                      TodoLists[]
+  Tutorials                      Tutorials[]
+  UserPushSubscriptions          UserPushSubscriptions[]
+  Users_Users_tenantIdToTenants  Users[]                   @relation("Users_tenantIdToTenants")
+  Whatsapps                      Whatsapps[]
+  WordLists                      WordLists[]
+}
+
+model TicketEvaluations {
+  id         Int      @id @default(autoincrement())
+  evaluation String   @db.VarChar(255)
+  attempts   Int
+  ticketId   Int
+  userId     Int?
+  tenantId   Int
+  createdAt  DateTime @db.Timestamptz(6)
+  updatedAt  DateTime @db.Timestamptz(6)
+  Tenants    Tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  Users      Users?   @relation(fields: [userId], references: [id])
+}
+
+model TicketNotes {
+  id        Int      @id @default(autoincrement())
+  notes     String
+  ticketId  Int
+  userId    Int?
+  tenantId  Int
+  createdAt DateTime @db.Timestamptz(6)
+  updatedAt DateTime @db.Timestamptz(6)
+  idFront   String?  @default("")
+  Tenants   Tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  Users     Users?   @relation(fields: [userId], references: [id])
+}
+
+model TicketProtocols {
+  id        Int      @id @default(autoincrement())
+  protocol  String   @db.VarChar(255)
+  ticketId  Int
+  userId    Int?
+  tenantId  Int
+  createdAt DateTime @db.Timestamptz(6)
+  updatedAt DateTime @db.Timestamptz(6)
+  Tenants   Tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  Users     Users?   @relation(fields: [userId], references: [id])
+}
+
+model TicketShareds {
+  id          Int      @id @default(autoincrement())
+  inviteUrl   String   @db.VarChar(255)
+  ticketId    Int
+  userId      Int
+  tenantId    Int
+  createdAt   DateTime @db.Timestamptz(6)
+  updatedAt   DateTime @db.Timestamptz(6)
+  userIdArray Json?
+  Tenants     Tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  Tickets     Tickets  @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  Users       Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([ticketId, tenantId], map: "unique_ticket_shared_per_ticket")
+}
+
+model Tickets {
+  id                    Int               @id @default(autoincrement())
+  status                String            @default("pending") @db.VarChar(255)
+  lastMessage           String?
+  contactId             Int?
+  userId                Int?
+  createdAt             DateTime          @db.Timestamptz(6)
+  updatedAt             DateTime          @db.Timestamptz(6)
+  whatsappId            Int?
+  isGroup               Boolean           @default(false)
+  autoReplyId           Int?
+  stepAutoReplyId       Int?
+  queueId               Int?
+  tenantId              Int               @default(1)
+  unreadMessages        Int?
+  answered              Boolean?          @default(true)
+  channel               String?           @default("whatsapp") @db.VarChar(255)
+  chatFlowId            Int?
+  stepChatFlow          String?           @db.VarChar(255)
+  lastMessageAt         BigInt?
+  startedAttendanceAt   BigInt?
+  closedAt              BigInt?
+  isActiveDemand        Boolean           @default(false)
+  botRetries            Int               @default(0)
+  lastInteractionBot    DateTime?         @db.Timestamptz(6)
+  apiConfig             Json?
+  isFarewellMessage     Boolean           @default(false)
+  typebotStatus         Boolean           @default(false)
+  typebotSessionId      String?           @db.VarChar(255)
+  chatgptStatus         Boolean           @default(false)
+  dialogflowStatus      Boolean           @default(false)
+  chatGptHistory        Json?
+  threadId              String?
+  runId                 String?
+  outOpenHoursTries     Int?
+  firstCall             Boolean?          @default(true)
+  lastCall              Boolean?          @default(true)
+  lastCallChatbot       Boolean?          @default(true)
+  n8nStatus             Boolean           @default(false)
+  typebotRestart        String?           @default("")
+  typebotOff            String?           @default("")
+  typebotName           String?           @default("")
+  typebotUrl            String?           @default("")
+  chatflowTransfer      Boolean?          @default(false)
+  chatgptPrompt         String?
+  assistantId           String?
+  chatgptApiKey         String?
+  chatgptOrganizationId String?
+  chatgptOff            String?
+  imported              DateTime?         @db.Timestamptz(6)
+  difyStatus            Boolean           @default(false)
+  difySessionId         String?           @db.VarChar(255)
+  difyUrl               String?           @db.VarChar(255)
+  difyType              String?           @db.VarChar(255)
+  difyKey               String?           @db.VarChar(255)
+  difyOff               String?           @db.VarChar(255)
+  difyRestart           String?           @db.VarChar(255)
+  lastMessageReceived   BigInt?
+  reasons               String?
+  value                 Decimal?          @db.Decimal(10, 2)
+  lmHistory             Json?
+  lmStatus              Boolean           @default(false)
+  ollamaHistory         Json?
+  ollamaStatus          Boolean           @default(false)
+  geminiHistory         Json?
+  geminiStatus          Boolean           @default(false)
+  grokStatus            Boolean           @default(false)
+  grokHistory           Json?
+  qwenHistory           Json?
+  qwenStatus            Boolean           @default(false)
+  deepseekStatus        Boolean           @default(false)
+  deepseekHistory       Json?
+  claudeHistory         Json?
+  claudeStatus          Boolean           @default(false)
+  lastPauseAt           Decimal?          @db.Decimal(20, 0)
+  totalPauseTime        Decimal?          @default(0) @db.Decimal(20, 0)
+  isPaused              Boolean           @default(false)
+  shared                Boolean?
+  userIdArray           Json?
+  AutoReplyLogs         AutoReplyLogs[]
+  LogTickets            LogTickets[]
+  MessageUpserts        MessageUpserts[]
+  Messages              Messages[]
+  MessagesOffLine       MessagesOffLine[]
+  TicketShareds         TicketShareds[]
+  Contacts              Contacts?         @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  Queues                Queues?           @relation(fields: [queueId], references: [id], onDelete: Restrict)
+  Tenants               Tenants           @relation(fields: [tenantId], references: [id])
+  Users                 Users?            @relation(fields: [userId], references: [id])
+  Whatsapps             Whatsapps?        @relation(fields: [whatsappId], references: [id])
+  UserMessagesLog       UserMessagesLog[]
+
+  @@index([contactId], map: "idx_ticket_contact_id")
+  @@index([id], map: "idx_ticket_id")
+  @@index([queueId], map: "idx_ticket_queue_id")
+  @@index([status], map: "idx_ticket_status")
+  @@index([tenantId], map: "idx_ticket_tenant_id")
+  @@index([userId], map: "idx_ticket_user_id")
+  @@index([whatsappId], map: "idx_ticket_whatsapp_id")
+  @@index([tenantId, status, queueId, userId, contactId, whatsappId], map: "idx_tickets_combined")
+  @@index([isGroup, unreadMessages], map: "idx_tickets_isgroup_unread")
+  @@index([tenantId, status], map: "idx_tickets_tenant_status")
+  @@index([tenantId, status], map: "idx_tickets_tenantid_status")
+  @@index([tenantId, whatsappId, channel], map: "tickets_ten_wha_id_cha_idx")
+}
+
+model TodoLists {
+  id          BigInt   @id @default(autoincrement())
+  name        String
+  description String
+  limitDate   DateTime @db.Timestamptz(6)
+  owner       String
+  status      String
+  priority    String
+  comments    String?
+  userId      Int?
+  tenantId    Int      @default(1)
+  createdAt   DateTime @db.Timestamptz(6)
+  updatedAt   DateTime @db.Timestamptz(6)
+  ownerId     Int?
+  Tenants     Tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  Users       Users?   @relation(fields: [userId], references: [id])
+}
+
+model Tutorials {
+  id          String   @id @db.VarChar(255)
+  title       String
+  description String
+  link        String
+  thumbnail   String?  @db.VarChar(255)
+  isActive    Boolean? @default(false)
+  tenantId    Int
+  createdAt   DateTime @db.Timestamptz(6)
+  updatedAt   DateTime @db.Timestamptz(6)
+  Tenants     Tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model UserMessagesLog {
+  id        Int      @id @default(autoincrement())
+  messageId String?  @db.VarChar(255)
+  userId    Int?
+  ticketId  Int?
+  createdAt DateTime @db.Timestamptz(6)
+  updatedAt DateTime @db.Timestamptz(6)
+  Tickets   Tickets? @relation(fields: [ticketId], references: [id])
+  Users     Users?   @relation(fields: [userId], references: [id], onDelete: Restrict)
+}
+
+model UserPushSubscriptions {
+  id               BigInt   @id @default(autoincrement())
+  subscriptionData String?
+  userId           Int?
+  tenantId         Int      @default(1)
+  createdAt        DateTime @db.Timestamptz(6)
+  updatedAt        DateTime @db.Timestamptz(6)
+  deviceInfo       String   @default("unknown") @db.VarChar(255)
+  Tenants          Tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  Users            Users?   @relation(fields: [userId], references: [id])
+}
+
+model UserWhatsapps {
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  whatsappId Int
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @db.Timestamptz(6)
+  updatedAt  DateTime  @db.Timestamptz(6)
+  Users      Users     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Whatsapps  Whatsapps @relation(fields: [whatsappId], references: [id], onDelete: Cascade)
+}
+
+model Users {
+  id                                                           Int                       @id @default(autoincrement())
+  name                                                         String                    @db.VarChar(255)
+  email                                                        String                    @unique @db.VarChar(255)
+  passwordHash                                                 String                    @db.VarChar(255)
+  createdAt                                                    DateTime                  @db.Timestamptz(6)
+  updatedAt                                                    DateTime                  @db.Timestamptz(6)
+  profile                                                      String                    @default("admin") @db.VarChar(255)
+  tokenVersion                                                 Int                       @default(0)
+  tenantId                                                     Int                       @default(1)
+  lastLogin                                                    DateTime?                 @db.Timestamptz(6)
+  lastLogout                                                   DateTime?                 @db.Timestamptz(6)
+  isOnline                                                     Boolean?                  @default(false)
+  configs                                                      Json?                     @db.Json
+  lastOnline                                                   DateTime?                 @db.Timestamptz(6)
+  status                                                       String                    @default("offline") @db.VarChar(255)
+  resetPasswordToken                                           String?                   @db.VarChar(255)
+  resetPasswordExpires                                         DateTime?                 @db.Timestamptz(6)
+  blockWavoip                                                  Boolean?                  @default(false)
+  menuPermissions                                              Json?                     @default("{\"filas\": true, \"grupo\": true, \"massa\": true, \"notas\": true, \"kanban\": true, \"equipes\": true, \"sessoes\": true, \"tarefas\": true, \"campanhas\": true, \"chat-flow\": true, \"etiquetas\": true, \"avaliacoes\": true, \"fechamento\": true, \"protocolos\": true, \"relatorios\": true, \"agendamentos\": true, \"aniversarios\": true, \"chat-privado\": true, \"mensagens-rapidas\": true, \"horarioAtendimento\": true}")
+  sipEnabled                                                   Boolean?                  @default(false)
+  sipUsername                                                  String?                   @db.VarChar(255)
+  sipPassword                                                  String?                   @db.VarChar(255)
+  sipServer                                                    String?                   @db.VarChar(255)
+  sipPort                                                      Int?
+  sipTransport                                                 enum_Users_sipTransport?
+  sipStatus                                                    enum_Users_sipStatus?     @default(offline)
+  sipLastRegistration                                          DateTime?                 @db.Timestamptz(6)
+  businessHours                                                Json?                     @default("[{\"day\": 0, \"hr1\": \"08:00\", \"hr2\": \"12:00\", \"hr3\": \"14:00\", \"hr4\": \"18:00\", \"type\": \"O\", \"label\": \"Domingo\"}, {\"day\": 1, \"hr1\": \"08:00\", \"hr2\": \"12:00\", \"hr3\": \"14:00\", \"hr4\": \"18:00\", \"type\": \"O\", \"label\": \"Segunda-Feira\"}, {\"day\": 2, \"hr1\": \"08:00\", \"hr2\": \"12:00\", \"hr3\": \"14:00\", \"hr4\": \"18:00\", \"type\": \"O\", \"label\": \"Terça-Feira\"}, {\"day\": 3, \"hr1\": \"08:00\", \"hr2\": \"12:00\", \"hr3\": \"14:00\", \"hr4\": \"18:00\", \"type\": \"O\", \"label\": \"Quarta-Feira\"}, {\"day\": 4, \"hr1\": \"08:00\", \"hr2\": \"12:00\", \"hr3\": \"14:00\", \"hr4\": \"18:00\", \"type\": \"O\", \"label\": \"Quinta-Feira\"}, {\"day\": 5, \"hr1\": \"08:00\", \"hr2\": \"12:00\", \"hr3\": \"14:00\", \"hr4\": \"18:00\", \"type\": \"O\", \"label\": \"Sexta-Feira\"}, {\"day\": 6, \"hr1\": \"08:00\", \"hr2\": \"12:00\", \"hr3\": \"14:00\", \"hr4\": \"18:00\", \"type\": \"O\", \"label\": \"Sábado\"}]")
+  sessionId                                                    String?                   @db.VarChar(255)
+  ApiConfigs                                                   ApiConfigs[]
+  AutoReply                                                    AutoReply[]
+  BanLists                                                     BanLists[]
+  CallLogs                                                     CallLogs[]
+  Campaigns                                                    Campaigns[]
+  ChatFlow                                                     ChatFlow[]
+  ContactWallets                                               ContactWallets[]
+  FarewellMessages                                             FarewellMessages[]
+  FarewellPrivateMessages                                      FarewellPrivateMessages[]
+  FastReply                                                    FastReply[]
+  GhostLists                                                   GhostLists[]
+  GreetingMessages                                             GreetingMessages[]
+  GroupLinkLists                                               GroupLinkLists[]
+  GroupMessages                                                GroupMessages[]
+  LogTickets                                                   LogTickets[]
+  Messages                                                     Messages[]
+  MessagesOffLine                                              MessagesOffLine[]
+  Notifications                                                Notifications[]
+  Opportunitys                                                 Opportunitys[]
+  ParticipantsLists                                            ParticipantsLists[]
+  PipelineActions                                              PipelineActions[]
+  Plans                                                        Plans[]
+  PrivateMessage_PrivateMessage_receiverIdToUsers              PrivateMessage[]          @relation("PrivateMessage_receiverIdToUsers")
+  PrivateMessage_PrivateMessage_senderIdToUsers                PrivateMessage[]          @relation("PrivateMessage_senderIdToUsers")
+  Queues                                                       Queues[]
+  StepsReply                                                   StepsReply[]
+  StepsReplyActions_StepsReplyActions_userIdDestinationToUsers StepsReplyActions[]       @relation("StepsReplyActions_userIdDestinationToUsers")
+  StepsReplyActions_StepsReplyActions_userIdToUsers            StepsReplyActions[]       @relation("StepsReplyActions_userIdToUsers")
+  Tags                                                         Tags[]
+  Tenants_Tenants_ownerIdToUsers                               Tenants[]                 @relation("Tenants_ownerIdToUsers")
+  TicketEvaluations                                            TicketEvaluations[]
+  TicketNotes                                                  TicketNotes[]
+  TicketProtocols                                              TicketProtocols[]
+  TicketShareds                                                TicketShareds[]
+  Tickets                                                      Tickets[]
+  TodoLists                                                    TodoLists[]
+  UserMessagesLog                                              UserMessagesLog[]
+  UserPushSubscriptions                                        UserPushSubscriptions[]
+  UserWhatsapps                                                UserWhatsapps[]
+  Tenants_Users_tenantIdToTenants                              Tenants                   @relation("Users_tenantIdToTenants", fields: [tenantId], references: [id])
+  UsersPrivateGroups                                           UsersPrivateGroups[]
+  UsersQueues                                                  UsersQueues[]
+  WordLists                                                    WordLists[]
+
+  @@index([id], map: "idx_users_id")
+}
+
+model UsersPrivateGroups {
+  id                       Int                        @id @default(autoincrement())
+  groupId                  Int
+  userId                   Int
+  createdAt                DateTime                   @db.Timestamptz(6)
+  updatedAt                DateTime                   @db.Timestamptz(6)
+  ReadPrivateMessageGroups ReadPrivateMessageGroups[]
+  GroupMessages            GroupMessages              @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  Users                    Users                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UsersQueues {
+  id        Int      @id @default(autoincrement())
+  queueId   Int
+  userId    Int
+  createdAt DateTime @db.Timestamptz(6)
+  updatedAt DateTime @db.Timestamptz(6)
+  Queues    Queues   @relation(fields: [queueId], references: [id], onDelete: Cascade)
+  Users     Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, queueId], map: "usersqueues_user_query_id_idx")
+  @@index([userId], map: "usersqueues_userid_idx")
+}
+
+model Whatsapps {
+  id                             Int                     @id @default(autoincrement())
+  session                        String?
+  qrcode                         String?
+  status                         String?                 @db.VarChar(255)
+  battery                        String?                 @db.VarChar(255)
+  plugged                        Boolean?
+  createdAt                      DateTime                @db.Timestamptz(6)
+  updatedAt                      DateTime                @db.Timestamptz(6)
+  name                           String                  @db.VarChar(255)
+  isDefault                      Boolean                 @default(false)
+  retries                        Int                     @default(0)
+  tenantId                       Int                     @default(1)
+  phone                          Json?
+  number                         String?
+  isDeleted                      Boolean?                @default(false)
+  tokenTelegram                  String?
+  type                           String                  @default("whatsapp") @db.VarChar(255)
+  instagramUser                  String?
+  instagramKey                   String?
+  tokenHook                      String?
+  wabaBSP                        String?                 @db.VarChar(255)
+  tokenAPI                       String?
+  isActive                       Boolean                 @default(true)
+  fbPageId                       String?
+  fbObject                       Json?
+  farewellMessage                String?
+  chatFlowId                     Int?
+  chatgptPrompt                  String?
+  wordList                       String?
+  profilePic                     String?
+  assistantId                    String?
+  wabaId                         String?
+  bmToken                        String?
+  typebotRestart                 String?
+  typebotOff                     String?
+  typebotName                    String?
+  typebotUrl                     String?
+  chatgptApiKey                  String?
+  chatgptOrganizationId          String?
+  chatgptOff                     String?
+  dialogflowJsonFilename         String?
+  dialogflowProjectId            String?
+  dialogflowLanguage             String?
+  dialogflowOff                  String?
+  dialogflowJson                 String?
+  sendEvaluation                 String?
+  wppUser                        String?
+  wppPass                        String?
+  userId                         Int?
+  queueId                        Int?
+  queueIdImportMessages          Int?
+  isButton                       String?
+  proxyUrl                       String?
+  proxyUser                      String?
+  proxyPass                      String?
+  webversion                     String?
+  remotePath                     String?
+  selfDistribute                 String?
+  wabaVersion                    String?
+  importMessages                 Boolean?                @default(false)
+  importOldMessages              String?
+  importRecentMessages           String?
+  statusImportMessages           String?
+  closedTicketsPostImported      Boolean?
+  importOldMessagesGroups        Boolean?
+  transcribeAudio                String?
+  transcribeAudioJson            Json?
+  n8nUrl                         String?
+  destroyMessage                 String?
+  difyUrl                        String?
+  difyType                       String?
+  difyKey                        String?
+  difyOff                        String?
+  difyRestart                    String?
+  birthdayDate                   String?
+  birthdayDateMessage            String?
+  wavoipToken                    String?
+  typebotUnknowMessage           String?
+  typebotButtonChoiceMessage     String?
+  closeKeyWord                   String?
+  disableExternalIntegration     String?
+  birthdayDateFileName           String?
+  birthdayDateHour               String?
+  lmUrl                          String?
+  lmModel                        String?
+  lmOff                          String?
+  lmPrompt                       String?
+  waitProcessExternalInteraction String?
+  ollamaUrl                      String?
+  ollamaModel                    String?
+  ollamaOff                      String?
+  ollamaPrompt                   String?
+  chatgptModel                   String?
+  geminiUrl                      String?
+  geminiModel                    String?
+  geminiOff                      String?
+  geminiPrompt                   String?
+  grokUrl                        String?
+  grokModel                      String?
+  grokOff                        String?
+  grokPrompt                     String?
+  qwenUrl                        String?
+  qwenModel                      String?
+  qwenOff                        String?
+  qwenPrompt                     String?
+  deepseekUrl                    String?
+  deepseekModel                  String?
+  deepseekOff                    String?
+  deepseekPrompt                 String?
+  claudeUrl                      String?
+  claudeModel                    String?
+  claudeOff                      String?
+  claudePrompt                   String?
+  webPush                        String?
+  chatgptVoiceModel              String?
+  chatgptVoice                   String?
+  ApiConfigs                     ApiConfigs[]
+  ApiMessages                    ApiMessages[]
+  BirthdayMessagesSents          BirthdayMessagesSents[]
+  Campaigns                      Campaigns[]
+  MessageUpserts                 MessageUpserts[]
+  PipelineActions                PipelineActions[]
+  Tickets                        Tickets[]
+  UserWhatsapps                  UserWhatsapps[]
+  ChatFlow                       ChatFlow?               @relation(fields: [chatFlowId], references: [id])
+  Queues                         Queues?                 @relation(fields: [queueIdImportMessages], references: [id])
+  Tenants                        Tenants                 @relation(fields: [tenantId], references: [id])
+}
+
+model WordLists {
+  id        Int      @id @default(autoincrement())
+  groupId   String   @db.VarChar(255)
+  word      String
+  userId    Int?
+  tenantId  Int
+  createdAt DateTime @db.Timestamptz(6)
+  updatedAt DateTime @db.Timestamptz(6)
+  Tenants   Tenants  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  Users     Users?   @relation(fields: [userId], references: [id])
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  DELIVERED
+  CANCELLED
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+}
+
+enum enum_BackupResults_backupType {
+  manual
+  scheduled
+  api
+}
+
+enum enum_PipelineActionLogs_status {
+  success
+  error
+  pending
+}
+
+enum enum_PipelineActions_actionType {
+  message
+  stage_change
+  status_change
+  add_tag
+  add_wallet
+  flow
+}
+
+enum enum_Users_sipStatus {
+  online
+  offline
+  busy
+}
+
+enum enum_Users_sipTransport {
+  udp
+  tcp
+  tls
+  ws
+}

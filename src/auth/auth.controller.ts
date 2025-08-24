@@ -22,10 +22,10 @@ export class AuthController {
   }
 
   @Post('logout')
-logout(@Res({ passthrough: true }) res: Response) {
-  res.clearCookie('token'); // ou qualquer cookie de sessão
-  return { message: 'Logout efetuado' };
-}
+  logout(@Res({ passthrough: true }) res: Response) {
+    res.clearCookie('token'); // ou qualquer cookie de sessão
+    return { message: 'Logout efetuado' };
+  }
 
   @UseGuards(JwtAuthGuard)
   @Get('profile')

@@ -7,36 +7,54 @@ export class TicketsService {
 
   constructor(private prisma: PrismaService) {}
 
-  // Busca todos os tickets com contatos e usuários
+  // Busca todos os tickets com contatos e usuários (tratando nulos)
   async findAll(tenantId: number) {
     try {
-      return await this.prisma.tickets.findMany({
+      const tickets = await this.prisma.tickets.findMany({
         where: { tenantId },
         orderBy: { createdAt: 'desc' },
-        include: {
-          Contacts: true,
-          Users: true,
-        },
       });
+
+      const ticketsWithRelations = await Promise.all(
+        tickets.map(async ticket => ({
+          ...ticket,
+          Contacts: ticket.contactId
+            ? await this.prisma.contacts.findUnique({ where: { id: ticket.contactId } })
+            : null,
+          Users: ticket.userId
+            ? await this.prisma.users.findUnique({ where: { id: ticket.userId } })
+            : null,
+        }))
+      );
+
+      return ticketsWithRelations;
     } catch (err) {
       this.logger.error('Erro ao buscar todos os tickets', err);
-      throw new Error('Erro ao buscar tickets');
+      throw err;
     }
   }
 
   // Busca ticket por ID
   async findById(id: number, tenantId: number) {
     try {
-      return await this.prisma.tickets.findFirst({
+      const ticket = await this.prisma.tickets.findFirst({
         where: { id, tenantId },
-        include: {
-          Contacts: true,
-          Users: true,
-        },
       });
+
+      if (!ticket) return null;
+
+      return {
+        ...ticket,
+        Contacts: ticket.contactId
+          ? await this.prisma.contacts.findUnique({ where: { id: ticket.contactId } })
+          : null,
+        Users: ticket.userId
+          ? await this.prisma.users.findUnique({ where: { id: ticket.userId } })
+          : null,
+      };
     } catch (err) {
       this.logger.error(`Erro ao buscar ticket ${id}`, err);
-      throw new Error('Erro ao buscar ticket');
+      throw err;
     }
   }
 
@@ -49,13 +67,13 @@ export class TicketsService {
       });
     } catch (err) {
       this.logger.error(`Erro ao atualizar status do ticket ${id}`, err);
-      throw new Error('Erro ao atualizar status do ticket');
+      throw err;
     }
   }
 
   // Cria ou atualiza ticket baseado no número do contato
   async createOrUpdate(
-    contactNumber: string, 
+    contactNumber: string,
     tenantId: number,
     lastMessage: string,
     whatsappId?: number,

@@ -14,7 +14,7 @@ export class DashboardService {
       where: { status: { not: 'closed' } },
     });
 
-    // Tempo médio: exemplo fictício (média em minutos entre startedAttendanceAt e closedAt)
+    // Tempo médio: média em minutos entre startedAttendanceAt e closedAt
     const tickets = await this.prisma.tickets.findMany({
       select: { startedAttendanceAt: true, closedAt: true },
       where: { startedAttendanceAt: { not: null }, closedAt: { not: null } },
@@ -24,7 +24,8 @@ export class DashboardService {
       tickets.length > 0
         ? Math.round(
             tickets
-              .map(t => (t.closedAt - t.startedAttendanceAt) / 60000) // ms -> minutos
+              .filter(t => t.closedAt !== null && t.startedAttendanceAt !== null)
+              .map(t => Number(t.closedAt! - t.startedAttendanceAt!) / 60000) // converte bigint para number e ms -> minutos
               .reduce((a, b) => a + b, 0) / tickets.length,
           ) + 'm'
         : '0m';
@@ -53,13 +54,13 @@ export class DashboardService {
       contatosAtivos,
       tempoMedio,
       taxaResolucao,
-      weeklyData: weeklyData.map(w => ({ day: w.status, tickets: w._count.status, messages: 0 })), // você pode adaptar
-      hourlyData: [], // implementar se quiser
+      weeklyData: weeklyData.map(w => ({ day: w.status, tickets: w._count.status, messages: 0 })),
+      hourlyData: [],
       statusData,
-      userAttendanceData: [], // implementar
-      channelData: [], // implementar
-      connectionData: [], // implementar
-      demandData: [], // implementar
+      userAttendanceData: [],
+      channelData: [],
+      connectionData: [],
+      demandData: [],
     };
   }
 }

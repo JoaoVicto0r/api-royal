@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Param, Post, Body } from '@nestjs/common';
+import { Controller, Get, Query, Param, Post, Body, Req } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { Users } from '@prisma/client';
 
@@ -11,6 +11,12 @@ export class UsersController {
         const user = await this.usersService.findByEmail(email);
         if(!user) return { message: 'Usuario não encontrado'};
         return user; 
+    }
+    @Get('me')
+    async getMe(@Req() req: Request) {
+        // aqui você pode pegar o usuário logado via token, por enquanto teste com ID fixo
+        const userId = 1; // substitua pela lógica real
+        return this.usersService.findOne(userId);
     }
 
     @Get(':id')

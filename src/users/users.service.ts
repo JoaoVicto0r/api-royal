@@ -11,6 +11,12 @@ export class UsersService {
             where: { email },
         });
     }
+    async findOne(id: number) {
+        return this.prisma.users.findUnique({
+            where: { id },
+            select: { name: true, email: true }, // campos que você quer retornar
+        });
+    }
 
     async findById(id: number): Promise<Users | null> {
         return this.prisma.users.findUnique({

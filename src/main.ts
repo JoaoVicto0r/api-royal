@@ -4,8 +4,14 @@ import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.enableCors({ origin: 'https://crm-gamma-red.vercel.app/' });
+
+  app.enableCors({ 
+    origin: 'https://crm-gamma-red.vercel.app', 
+    credentials: true, 
+  });
+
   app.use(cookieParser());
+
   await app.listen(3001);
 }
 bootstrap();

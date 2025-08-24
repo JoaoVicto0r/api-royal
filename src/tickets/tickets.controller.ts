@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Patch, Body, Query } from '@nestjs/common';
+import { Controller, Get, Param, Patch, Body, Query, ParseIntPipe } from '@nestjs/common';
 import { TicketsService } from './tickets.service';
 
 @Controller('tickets')
@@ -6,20 +6,23 @@ export class TicketsController {
   constructor(private ticketsService: TicketsService) {}
 
   @Get()
-  findAll(@Query('tenantId') tenantId: number) {
+  async findAll(@Query('tenantId', ParseIntPipe) tenantId: number) {
     return this.ticketsService.findAll(tenantId);
   }
 
   @Get(':id')
-  findById(@Param('id') id: number, @Query('tenantId') tenantId: number) {
+  async findById(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('tenantId', ParseIntPipe) tenantId: number,
+  ) {
     return this.ticketsService.findById(id, tenantId);
   }
 
   @Patch(':id/status')
-  updateStatus(
-    @Param('id') id: number,
+  async updateStatus(
+    @Param('id', ParseIntPipe) id: number,
     @Body('status') status: string,
-    @Query('tenantId') tenantId: number,
+    @Query('tenantId', ParseIntPipe) tenantId: number,
   ) {
     return this.ticketsService.updateStatus(id, status, tenantId);
   }

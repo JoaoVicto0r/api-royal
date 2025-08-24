@@ -7,27 +7,50 @@ export class TicketsService {
 
   constructor(private prisma: PrismaService) {}
 
-  // Busca todos os tickets
+  // Busca todos os tickets com contatos e usuários
   async findAll(tenantId: number) {
-    return this.prisma.tickets.findMany({
-      where: { tenantId },
-      orderBy: { createdAt: 'desc' },
-    });
+    try {
+      return await this.prisma.tickets.findMany({
+        where: { tenantId },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          Contacts: true,
+          Users: true,
+        },
+      });
+    } catch (err) {
+      this.logger.error('Erro ao buscar todos os tickets', err);
+      throw new Error('Erro ao buscar tickets');
+    }
   }
 
   // Busca ticket por ID
   async findById(id: number, tenantId: number) {
-    return this.prisma.tickets.findFirst({
-      where: { id, tenantId },
-    });
+    try {
+      return await this.prisma.tickets.findFirst({
+        where: { id, tenantId },
+        include: {
+          Contacts: true,
+          Users: true,
+        },
+      });
+    } catch (err) {
+      this.logger.error(`Erro ao buscar ticket ${id}`, err);
+      throw new Error('Erro ao buscar ticket');
+    }
   }
 
   // Atualiza status de um ticket
   async updateStatus(id: number, status: string, tenantId: number) {
-    return this.prisma.tickets.updateMany({
-      where: { id, tenantId },
-      data: { status, updatedAt: new Date() },
-    });
+    try {
+      return await this.prisma.tickets.updateMany({
+        where: { id, tenantId },
+        data: { status, updatedAt: new Date() },
+      });
+    } catch (err) {
+      this.logger.error(`Erro ao atualizar status do ticket ${id}`, err);
+      throw new Error('Erro ao atualizar status do ticket');
+    }
   }
 
   // Cria ou atualiza ticket baseado no número do contato
@@ -54,7 +77,7 @@ export class TicketsService {
       });
 
       if (existingTicket) {
-        return this.prisma.tickets.update({
+        return await this.prisma.tickets.update({
           where: { id: existingTicket.id },
           data: {
             lastMessage,
@@ -66,7 +89,7 @@ export class TicketsService {
         });
       }
 
-      return this.prisma.tickets.create({
+      return await this.prisma.tickets.create({
         data: {
           lastMessage,
           contactId,

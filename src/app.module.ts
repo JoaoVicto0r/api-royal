@@ -8,9 +8,10 @@ import { WhatsappModule } from './whatsapp/whatsapp.module';
 import { TicketsModule } from './tickets/tickets.module';
 import { ChatService } from './chat/chat.service';
 import { ChatModule } from './chat/chat.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
-  imports: [UsersModule, PrismaModule, AuthModule, WhatsappModule, TicketsModule, ChatModule],
+  imports: [UsersModule, PrismaModule, AuthModule, WhatsappModule, TicketsModule, ChatModule, DashboardModule],
   controllers: [AppController],
   providers: [AppService, ChatService], 
 })

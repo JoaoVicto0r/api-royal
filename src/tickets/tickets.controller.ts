@@ -1,29 +1,36 @@
-import { Controller, Get, Param, Patch, Body, Query, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 import { TicketsService } from './tickets.service';
+import { CreateTicketDto } from './dto/create-ticket.dto';
+import { CreateMessageDto } from './dto/create-message.dto';
 
 @Controller('tickets')
 export class TicketsController {
-  constructor(private ticketsService: TicketsService) {}
+  constructor(private readonly ticketsService: TicketsService) {}
 
+  // Listar todos tickets
   @Get()
-  async findAll(@Query('tenantId', ParseIntPipe) tenantId: number) {
-    return this.ticketsService.findAll(tenantId);
+  findAll() {
+    return this.ticketsService.findAll();
   }
 
-  @Get(':id')
-  async findById(
-    @Param('id', ParseIntPipe) id: number,
-    @Query('tenantId', ParseIntPipe) tenantId: number,
-  ) {
-    return this.ticketsService.findById(id, tenantId);
+  // Criar ticket
+  @Post()
+  createTicket(@Body() createTicketDto: CreateTicketDto) {
+    return this.ticketsService.createTicket(createTicketDto);
   }
 
-  @Patch(':id/status')
-  async updateStatus(
-    @Param('id', ParseIntPipe) id: number,
-    @Body('status') status: string,
-    @Query('tenantId', ParseIntPipe) tenantId: number,
+  // Adicionar mensagem a um ticket
+  @Post(':ticketId/messages')
+  addMessage(
+    @Param('ticketId') ticketId: string,
+    @Body() createMessageDto: CreateMessageDto,
   ) {
-    return this.ticketsService.updateStatus(id, status, tenantId);
+    return this.ticketsService.addMessage(ticketId, createMessageDto);
+  }
+
+  // Buscar mensagens de um ticket
+  @Get(':ticketId/messages')
+  getMessages(@Param('ticketId') ticketId: string) {
+    return this.ticketsService.getMessages(ticketId);
   }
 }

@@ -35,29 +35,34 @@ export class WhatsappService {
         const messageId = message.key.id ?? '';
         const now = new Date();
 
+        // Serializa o objeto garantindo que BigInt seja convertido para string
+        const safeMessage = JSON.parse(
+          JSON.stringify(message, (_, value) => (typeof value === 'bigint' ? value.toString() : value)),
+        );
+
         // Salva no DB
         const savedMessage = await this.prisma.apiMessages.create({
           data: {
-            sessionId: 1, // ajuste com o ID correto do WhatsApp
+            sessionId: 1, 
             tenantId: 1,
             number: from,
             body: text,
             messageId: messageId,
-            messageWA: JSON.parse(JSON.stringify(message)), // serializa
+            messageWA: safeMessage,
             createdAt: now,
             updatedAt: now,
           },
         });
 
-        // Converte remoteJid para string apenas (para o TicketsService)
-        const contactId = parseInt(from.replace(/\D/g, ''), 10); // número
-const ticket = await this.ticketsService.createOrUpdate(contactId, text, "1");
+        // Converte remoteJid para número seguro para TicketsService
+        const contactId = parseInt(from.replace(/\D/g, ''), 10);
+        const ticket = await this.ticketsService.createOrUpdate(contactId, text, "1");
 
         // Envia via Socket.io
         this.chatGateway.sendMessage({
           from,
           body: text,
-          ticketId: ticket.id,
+          ticketId: ticket.id.toString(), // converte ticket.id caso seja BigInt
         });
       } catch (err) {
         this.logger.error(err);

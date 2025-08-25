@@ -37,23 +37,22 @@ export class WhatsappService {
         const now = new Date();
 
         // Serializa BigInt para string
-        const safeMessage = JSON.parse(
-          JSON.stringify(message, (_, value) => (typeof value === 'bigint' ? value.toString() : value)),
-        );
+          const safeMessage = JSON.parse(
+              JSON.stringify(message, (_, value) => (typeof value === 'bigint' ? value.toString() : value)),
+            );
 
-        // Salva no DB
-        const savedMessage = await this.prisma.apiMessages.create({
-          data: {
-            sessionId: 1,
-            tenantId: 1,
-            number: from,
-            body: text,
-            messageId: messageId,
-            messageWA: safeMessage,
-            createdAt: now,
-            updatedAt: now,
-          },
-        });
+            const savedMessage = await this.prisma.apiMessages.create({
+              data: {
+                sessionId: 1,
+                tenantId: 1,
+                number: from,
+                body: text,
+                messageId: messageId,
+                messageWA: safeMessage, // BigInt convertido
+                createdAt: now,
+                updatedAt: now,
+              },
+            });
 
         // Converte remoteJid para número
         const contactId = parseInt(from.replace(/\D/g, ''), 10);

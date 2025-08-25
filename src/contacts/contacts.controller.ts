@@ -7,23 +7,20 @@ export class ContactsController {
 
   @Get()
   async findAll() {
-    
     const contacts = await this.contactsService.findAll();
 
-    
+    // Converte BigInt para string
     const serializedContacts = contacts.map(contact => ({
       ...contact,
-      id: contact.id.toString(), 
+      id: contact.id.toString(),
+      tenantId: contact.tenantId?.toString(), // se existir BigInt
     }));
 
-    
     return serializedContacts;
   }
 
   @Post()
-  async create(
-    @Body() body: { name: string; number?: string; email?: string; tenantId?: number },
-  ) {
+  async create(@Body() body: { name: string; number?: string; email?: string; tenantId?: number }) {
     return this.contactsService.create(body);
   }
 }

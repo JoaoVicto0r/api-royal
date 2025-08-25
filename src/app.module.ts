@@ -9,9 +9,10 @@ import { TicketsModule } from './tickets/tickets.module';
 import { ChatService } from './chat/chat.service';
 import { ChatModule } from './chat/chat.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { ContactsModule } from './contacts/contacts.module';
 
 @Module({
-  imports: [UsersModule, PrismaModule, AuthModule, WhatsappModule, TicketsModule, ChatModule, DashboardModule],
+  imports: [UsersModule, PrismaModule, AuthModule, WhatsappModule, TicketsModule, ChatModule, DashboardModule, ContactsModule],
   controllers: [AppController],
   providers: [AppService, ChatService], 
 })

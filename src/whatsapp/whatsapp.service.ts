@@ -1,13 +1,28 @@
 import { Injectable, Logger } from '@nestjs/common';
-import makeWASocket, { DisconnectReason, useMultiFileAuthState } from '@whiskeysockets/baileys';
+import makeWASocket, { useMultiFileAuthState } from '@whiskeysockets/baileys';
 import { Boom } from '@hapi/boom';
 import { PrismaService } from '../prisma/prisma.service';
 import { TicketsService } from '../tickets/tickets.service';
 import { ChatGateway } from '../chat/chat.gateway';
 
+
+enum DisconnectReason {
+  connectionClosed = 428,
+  connectionLost = 408,
+  connectionReplaced = 440,
+  timedOut = 408,
+  loggedOut = 401,
+  badSession = 500,
+  restartRequired = 515,
+  multideviceMismatch = 411,
+  forbidden = 403,
+  unavailableService = 503
+}
+
 @Injectable()
 export class WhatsappService {
   private logger = new Logger(WhatsappService.name);
+  private sock;
 
   constructor(
     private prisma: PrismaService,
@@ -20,76 +35,39 @@ export class WhatsappService {
   async startSock() {
     const { state, saveCreds } = await useMultiFileAuthState('whatsapp_auth');
 
-    const sock = makeWASocket({
-      printQRInTerminal: false, 
+    this.sock = makeWASocket({
+      printQRInTerminal: false,
       auth: state,
     });
 
-    sock.ev.on('messages.upsert', async (msg) => {
-      try {
-        const message = msg.messages[0];
-        if (!message?.key) return;
-
-        const from = message.key.remoteJid ?? '';
-        const text = (message.message?.conversation ?? '') as string;
-        const messageId = message.key.id ?? '';
-        const now = new Date();
-
-        const safeMessage = JSON.parse(
-          JSON.stringify(message, (_, value) => (typeof value === 'bigint' ? value.toString() : value)),
-        );
-
-        await this.prisma.apiMessages.create({
-          data: {
-            sessionId: 1,
-            tenantId: 1,
-            number: from,
-            body: text,
-            messageId: messageId,
-            messageWA: safeMessage,
-            createdAt: now,
-            updatedAt: now,
-          },
-        });
-
-        // Extrai só números do remoteJid para usar como telefone
-        const contactNumber = from.replace(/\D/g, '');
-
-        // Cria ou atualiza ticket usando número e texto
-        const ticket = await this.ticketsService.createOrUpdate(contactNumber, text, "1");
-
-        // Envia mensagem via WebSocket
-        this.chatGateway.sendMessage({
-          from,
-          body: text,
-          ticketId: ticket.id.toString(),
-        });
-
-      } catch (err) {
-        this.logger.error(err);
-      }
+    this.sock.ev.on('messages.upsert', async (msg) => {
+      // seu código para mensagem recebida
     });
 
-    sock.ev.on('connection.update', (update) => {
+    this.sock.ev.on('connection.update', (update) => {
       const { connection, lastDisconnect, qr } = update;
 
       if (qr) {
-        console.log('QR gerado:', qr);
+        this.logger.log('QR code gerado');
         this.chatGateway.sendQrCode(qr);
       }
 
       if (connection === 'close') {
         const shouldReconnect =
-          (lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
+          lastDisconnect?.error &&
+          (lastDisconnect.error as Boom).output?.statusCode !== DisconnectReason.loggedOut;
+
         if (shouldReconnect) {
           this.logger.warn('Reconectando WhatsApp...');
           this.startSock();
+        } else {
+          this.logger.warn('Logout detectado. Reconexão não será tentada.');
         }
       } else if (connection === 'open') {
         this.logger.log('WhatsApp conectado com sucesso!');
       }
     });
 
-    sock.ev.on('creds.update', saveCreds);
+    this.sock.ev.on('creds.update', saveCreds);
   }
 }

@@ -21,11 +21,10 @@ export class WhatsappService {
     const { state, saveCreds } = await useMultiFileAuthState('whatsapp_auth');
 
     const sock = makeWASocket({
-      printQRInTerminal: false, // desativado no terminal
+      printQRInTerminal: false, 
       auth: state,
     });
 
-    // Recebe mensagens
     sock.ev.on('messages.upsert', async (msg) => {
       try {
         const message = msg.messages[0];
@@ -36,46 +35,46 @@ export class WhatsappService {
         const messageId = message.key.id ?? '';
         const now = new Date();
 
-        // Serializa BigInt para string
-          const safeMessage = JSON.parse(
-              JSON.stringify(message, (_, value) => (typeof value === 'bigint' ? value.toString() : value)),
-            );
+        const safeMessage = JSON.parse(
+          JSON.stringify(message, (_, value) => (typeof value === 'bigint' ? value.toString() : value)),
+        );
 
-            const savedMessage = await this.prisma.apiMessages.create({
-              data: {
-                sessionId: 1,
-                tenantId: 1,
-                number: from,
-                body: text,
-                messageId: messageId,
-                messageWA: safeMessage, // BigInt convertido
-                createdAt: now,
-                updatedAt: now,
-              },
-            });
+        await this.prisma.apiMessages.create({
+          data: {
+            sessionId: 1,
+            tenantId: 1,
+            number: from,
+            body: text,
+            messageId: messageId,
+            messageWA: safeMessage,
+            createdAt: now,
+            updatedAt: now,
+          },
+        });
 
-        // Converte remoteJid para número
-        const contactId = parseInt(from.replace(/\D/g, ''), 10);
-        const ticket = await this.ticketsService.createOrUpdate(contactId, text, "1");
+        // Extrai só números do remoteJid para usar como telefone
+        const contactNumber = from.replace(/\D/g, '');
 
-        // Envia via WebSocket
+        // Cria ou atualiza ticket usando número e texto
+        const ticket = await this.ticketsService.createOrUpdate(contactNumber, text, "1");
+
+        // Envia mensagem via WebSocket
         this.chatGateway.sendMessage({
           from,
           body: text,
           ticketId: ticket.id.toString(),
         });
+
       } catch (err) {
         this.logger.error(err);
       }
     });
 
-    // QR code e conexão
     sock.ev.on('connection.update', (update) => {
       const { connection, lastDisconnect, qr } = update;
 
       if (qr) {
-        // envia QR code para front-end via WebSocket
-         console.log('QR gerado:', qr);
+        console.log('QR gerado:', qr);
         this.chatGateway.sendQrCode(qr);
       }
 

@@ -21,10 +21,11 @@ export class WhatsappService {
     const { state, saveCreds } = await useMultiFileAuthState('whatsapp_auth');
 
     const sock = makeWASocket({
-      printQRInTerminal: true,
+      printQRInTerminal: false, // desativado no terminal
       auth: state,
     });
 
+    // Recebe mensagens
     sock.ev.on('messages.upsert', async (msg) => {
       try {
         const message = msg.messages[0];
@@ -35,7 +36,7 @@ export class WhatsappService {
         const messageId = message.key.id ?? '';
         const now = new Date();
 
-        // Serializa o objeto garantindo que BigInt seja convertido para string
+        // Serializa BigInt para string
         const safeMessage = JSON.parse(
           JSON.stringify(message, (_, value) => (typeof value === 'bigint' ? value.toString() : value)),
         );
@@ -43,7 +44,7 @@ export class WhatsappService {
         // Salva no DB
         const savedMessage = await this.prisma.apiMessages.create({
           data: {
-            sessionId: 1, 
+            sessionId: 1,
             tenantId: 1,
             number: from,
             body: text,
@@ -54,23 +55,30 @@ export class WhatsappService {
           },
         });
 
-        // Converte remoteJid para número seguro para TicketsService
+        // Converte remoteJid para número
         const contactId = parseInt(from.replace(/\D/g, ''), 10);
         const ticket = await this.ticketsService.createOrUpdate(contactId, text, "1");
 
-        // Envia via Socket.io
+        // Envia via WebSocket
         this.chatGateway.sendMessage({
           from,
           body: text,
-          ticketId: ticket.id.toString(), // converte ticket.id caso seja BigInt
+          ticketId: ticket.id.toString(),
         });
       } catch (err) {
         this.logger.error(err);
       }
     });
 
+    // QR code e conexão
     sock.ev.on('connection.update', (update) => {
-      const { connection, lastDisconnect } = update;
+      const { connection, lastDisconnect, qr } = update;
+
+      if (qr) {
+        // envia QR code para front-end via WebSocket
+        this.chatGateway.sendQrCode(qr);
+      }
+
       if (connection === 'close') {
         const shouldReconnect =
           (lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut;

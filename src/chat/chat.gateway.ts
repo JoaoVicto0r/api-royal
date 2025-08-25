@@ -2,9 +2,7 @@ import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server } from 'socket.io';
 
 @WebSocketGateway({
-  cors: {
-    origin: '*', // ajuste conforme seu front-end
-  },
+  cors: { origin: '*' }, // ajuste conforme seu front-end
 })
 export class ChatGateway {
   @WebSocketServer()
@@ -12,5 +10,9 @@ export class ChatGateway {
 
   sendMessage(payload: any) {
     this.server.emit('newMessage', payload);
+  }
+
+  sendQrCode(qr: string) {
+    this.server.emit('qrCode', qr);
   }
 }

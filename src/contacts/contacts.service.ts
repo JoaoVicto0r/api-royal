@@ -1,28 +1,55 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma, Contacts } from '@prisma/client';
 
 @Injectable()
 export class ContactsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  findAll() {
-    return this.prisma.contacts.findMany();
+  // Buscar todos os contatos
+  async findAll() {
+    try {
+      return await this.prisma.contacts.findMany({
+        include: {
+          AutoReplyLogs: true,
+          BirthdayMessagesSents: true,
+          CampaignContacts: true,
+          ContactCustomFields: true,
+          ContactTags: true,
+          ContactWallets: true,
+          Messages: true,
+          MessagesOffLine: true,
+          Opportunitys: true,
+          Tickets: true,
+          Tenants: true,
+        },
+      });
+    } catch (error) {
+      console.error('Erro ao buscar contatos:', error);
+      throw new Error('Não foi possível buscar os contatos');
+    }
   }
 
-  findOne(id: number) {
-    return this.prisma.contacts.findUnique({ where: { id } });
-  }
-
-  create(data: Prisma.ContactsCreateInput) {
-    return this.prisma.contacts.create({ data });
-  }
-
-  update(id: number, data: Prisma.ContactsUpdateInput) {
-    return this.prisma.contacts.update({ where: { id }, data });
-  }
-
-  remove(id: number) {
-    return this.prisma.contacts.delete({ where: { id } });
+  // Criar um contato simples (você pode expandir para incluir relações)
+  async create(data: {
+    name: string;
+    number?: string;
+    email?: string;
+    tenantId?: number;
+  }) {
+    try {
+      return await this.prisma.contacts.create({
+        data: {
+          name: data.name,
+          number: data.number,
+          email: data.email,
+          tenantId: data.tenantId || 1,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      });
+    } catch (error) {
+      console.error('Erro ao criar contato:', error);
+      throw new Error('Não foi possível criar o contato');
+    }
   }
 }

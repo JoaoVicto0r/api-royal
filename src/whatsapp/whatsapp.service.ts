@@ -75,6 +75,7 @@ export class WhatsappService {
 
       if (qr) {
         // envia QR code para front-end via WebSocket
+         console.log('QR gerado:', qr);
         this.chatGateway.sendQrCode(qr);
       }
 

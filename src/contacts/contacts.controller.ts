@@ -7,7 +7,17 @@ export class ContactsController {
 
   @Get()
   async findAll() {
-    return this.contactsService.findAll();
+    
+    const contacts = await this.contactsService.findAll();
+
+    
+    const serializedContacts = contacts.map(contact => ({
+      ...contact,
+      id: contact.id.toString(), 
+    }));
+
+    
+    return serializedContacts;
   }
 
   @Post()

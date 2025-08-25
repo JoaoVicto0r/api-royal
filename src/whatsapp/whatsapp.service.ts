@@ -49,10 +49,11 @@ export class WhatsappService {
           },
         });
 
-        // Converte remoteJid para número único para o ticket
-        const contactId = parseInt(from.replace(/\D/g, ''), 10).toString();
-const ticket = await this.ticketsService.createOrUpdate(contactId, Number(text), "1");
-        // Emite para todos os clientes conectados via Socket.io
+        // Converte remoteJid para string apenas (para o TicketsService)
+        const contactId = parseInt(from.replace(/\D/g, ''), 10); // número
+const ticket = await this.ticketsService.createOrUpdate(contactId, text, "1");
+
+        // Envia via Socket.io
         this.chatGateway.sendMessage({
           from,
           body: text,

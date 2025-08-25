@@ -1,4 +1,5 @@
 export class CreateMessageDto {
-  text: string;
-  sender: string; // "user" ou "agent"
+  body: string;
+  fromMe?: boolean;
+  userId?: number;
 }

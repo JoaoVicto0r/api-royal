@@ -1,4 +1,4 @@
 export class CreateTicketDto {
-  contactId: string;
+  contactId: number;
   status: string;
 }

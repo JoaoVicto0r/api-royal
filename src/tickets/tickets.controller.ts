@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+// src/tickets/tickets.controller.ts
+import { Controller, Get, Param, Post, Body } from '@nestjs/common';
 import { TicketsService } from './tickets.service';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { CreateMessageDto } from './dto/create-message.dto';
@@ -7,30 +8,29 @@ import { CreateMessageDto } from './dto/create-message.dto';
 export class TicketsController {
   constructor(private readonly ticketsService: TicketsService) {}
 
-  // Listar todos tickets
+  // Listar todos os tickets com mensagens
   @Get()
-  findAll() {
-    return this.ticketsService.findAll();
+  async findAll() {
+    return this.ticketsService.findAllTickets();
   }
 
-  // Criar ticket
+  // Obter mensagens de um ticket
+  @Get(':id/messages')
+  async getMessages(@Param('id') id: string) {
+    const ticketId = Number(id);
+    return this.ticketsService.getTicketMessages(ticketId);
+  }
+
+  // Criar novo ticket
   @Post()
-  createTicket(@Body() createTicketDto: CreateTicketDto) {
-    return this.ticketsService.createTicket(createTicketDto);
+  async create(@Body() dto: CreateTicketDto) {
+    return this.ticketsService.createTicket(dto);
   }
 
-  // Adicionar mensagem a um ticket
-  @Post(':ticketId/messages')
-  addMessage(
-    @Param('ticketId') ticketId: string,
-    @Body() createMessageDto: CreateMessageDto,
-  ) {
-    return this.ticketsService.addMessage(ticketId, createMessageDto);
-  }
-
-  // Buscar mensagens de um ticket
-  @Get(':ticketId/messages')
-  getMessages(@Param('ticketId') ticketId: string) {
-    return this.ticketsService.getMessages(ticketId);
+  // Adicionar mensagem a um ticket existente
+  @Post(':id/messages')
+  async addMessage(@Param('id') id: string, @Body() dto: CreateMessageDto) {
+    const ticketId = Number(id);
+    return this.ticketsService.addMessage(ticketId, dto);
   }
 }

@@ -70,4 +70,26 @@ export class WhatsappService {
 
     this.sock.ev.on('creds.update', saveCreds);
   }
+
+  async sendContacts(contacts: { name: string; number: string }[]) {
+  if (!this.sock) return;
+  
+  for (const contact of contacts) {
+    if (!contact.number) continue;
+
+    try {
+      // Converte número para o formato do WhatsApp
+      const jid = `${contact.number.replace(/\D/g, '')}@s.whatsapp.net`;
+
+      await this.sock.sendMessage(jid, {
+        text: `Olá ${contact.name}, você foi adicionado aos nossos contatos!`,
+      });
+
+      this.logger.log(`Mensagem enviada para ${contact.name} (${contact.number})`);
+    } catch (error) {
+      this.logger.error(`Erro ao enviar mensagem para ${contact.name}: ${error}`);
+    }
+  }
+}
+
 }

@@ -1,10 +1,14 @@
 import { Module } from '@nestjs/common';
 import { ContactsService } from './contacts.service';
 import { ContactsController } from './contacts.controller';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { GoogleModule } from 'src/google/google.module';
+import { PrismaModule } from 'src/prisma/prisma.module';
+import { WhatsappService } from 'src/whatsapp/whatsapp.service';
 
 @Module({
+  imports: [PrismaModule, GoogleModule],
   controllers: [ContactsController],
-  providers: [ContactsService, PrismaService],
+  providers: [ContactsService, PrismaService, WhatsappService],
 })
 export class ContactsModule {}

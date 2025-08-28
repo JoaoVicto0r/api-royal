@@ -10,10 +10,13 @@ import { ChatService } from './chat/chat.service';
 import { ChatModule } from './chat/chat.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { ContactsModule } from './contacts/contacts.module';
+import { GoogleService } from './google/google.service';
+import { GoogleController } from './google/google.controller';
+import { GoogleModule } from './google/google.module';
 
 @Module({
-  imports: [UsersModule, PrismaModule, AuthModule, WhatsappModule, TicketsModule, ChatModule, DashboardModule, ContactsModule],
-  controllers: [AppController],
-  providers: [AppService, ChatService], 
+  imports: [UsersModule, PrismaModule, AuthModule, WhatsappModule, TicketsModule, ChatModule, DashboardModule, ContactsModule, GoogleModule],
+  controllers: [AppController, GoogleController],
+  providers: [AppService, ChatService, GoogleService], 
 })
 export class AppModule {}

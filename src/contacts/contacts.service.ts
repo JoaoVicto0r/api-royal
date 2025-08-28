@@ -52,7 +52,7 @@ export class ContactsService {
 
   // Criar novo contato
   async create(data: {
-  name: string; // obrigatório
+  name: string; 
   number?: string;
   email?: string;
   tenantId?: number;
@@ -70,7 +70,7 @@ export class ContactsService {
 }) {
   return await this.prisma.contacts.create({
     data: {
-      name: data.name,  // obrigatório
+      name: data.name,  
       number: data.number,
       email: data.email,
       tenantId: data.tenantId || 1,
@@ -129,10 +129,10 @@ export class ContactsService {
     const contacts = await this.prisma.contacts.findMany({ where: { isWAContact: true } });
 
     const waContacts = contacts
-      .filter(c => c.number) // remove contatos sem número
+      .filter(c => c.number) 
       .map(c => ({
         name: c.name,
-        number: c.number!, // garante que não é null
+        number: c.number!, 
       }));
 
     await this.whatsappService.sendContacts(waContacts);

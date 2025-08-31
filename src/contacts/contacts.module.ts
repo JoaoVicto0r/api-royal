@@ -8,10 +8,12 @@ import { WhatsappService } from 'src/whatsapp/whatsapp.service';
 import { TicketsModule } from 'src/tickets/tickets.module';
 import { ChatModule } from 'src/chat/chat.module';
 
-
 @Module({
-  imports: [PrismaModule, GoogleModule, TicketsModule, ChatModule],
-  controllers: [ContactsController],
-  providers: [ContactsService, PrismaService, WhatsappService],
+
+	imports: [PrismaModule, GoogleModule, TicketsModule, ChatModule],
+	controllers: [ContactsController],
+	providers: [ContactsService, PrismaService, WhatsappService],
 })
-export class ContactsModule {}
+
+export class ContactsModule{}
+

@@ -6,10 +6,14 @@ import { GoogleModule } from 'src/google/google.module';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { WhatsappService } from 'src/whatsapp/whatsapp.service';
 import { TicketsModule } from 'src/tickets/tickets.module';
+import { ChatModule } from 'src/chat/chat.module';
 
 @Module({
-  imports: [PrismaModule, GoogleModule, TicketsModule],
-  controllers: [ContactsController],
-  providers: [ContactsService, PrismaService, WhatsappService],
+
+	import:[PrismaModule, GoogleModule, TicketModule, ChatModule],
+	controllers: [ContactsController],
+	providers: [ContactsService, PrismaService, WhatsappService],
 })
-export class ContactsModule {}
+
+export class ContactsModule{}
+

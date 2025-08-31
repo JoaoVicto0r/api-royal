@@ -16,7 +16,7 @@ async function bootstrap() {
   app.use(cookieParser());
   app.useGlobalInterceptors(new BigIntSerializerInterceptor());
 
-  await app.listen(3001, '0.0.0.0');
+  await app.listen(3001, '::');
 
 }
 bootstrap();

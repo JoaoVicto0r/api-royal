@@ -8,6 +8,7 @@ import { WhatsappService } from 'src/whatsapp/whatsapp.service';
 import { TicketsModule } from 'src/tickets/tickets.module';
 import { ChatModule } from 'src/chat/chat.module';
 
+
 @Module({
   imports: [PrismaModule, GoogleModule, TicketsModule, ChatModule],
   controllers: [ContactsController],

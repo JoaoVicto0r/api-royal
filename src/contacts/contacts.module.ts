@@ -10,7 +10,7 @@ import { ChatModule } from 'src/chat/chat.module';
 
 @Module({
 
-	import:[PrismaModule, GoogleModule, TicketModule, ChatModule],
+	imports: [PrismaModule, GoogleModule, TicketsModule, ChatModule],
 	controllers: [ContactsController],
 	providers: [ContactsService, PrismaService, WhatsappService],
 })

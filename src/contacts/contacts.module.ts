@@ -5,9 +5,10 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { GoogleModule } from 'src/google/google.module';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { WhatsappService } from 'src/whatsapp/whatsapp.service';
+import { TicketsModule } from 'src/tickets/tickets.module';
 
 @Module({
-  imports: [PrismaModule, GoogleModule],
+  imports: [PrismaModule, GoogleModule, TicketsModule],
   controllers: [ContactsController],
   providers: [ContactsService, PrismaService, WhatsappService],
 })

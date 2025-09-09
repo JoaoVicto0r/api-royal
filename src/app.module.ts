@@ -15,8 +15,18 @@ import { GoogleController } from './google/google.controller';
 import { GoogleModule } from './google/google.module';
 
 @Module({
-  imports: [UsersModule, PrismaModule, AuthModule, WhatsappModule, TicketsModule, ChatModule, DashboardModule, ContactsModule, GoogleModule],
+  imports: [
+    UsersModule,
+    PrismaModule,
+    AuthModule,
+    WhatsappModule,
+    TicketsModule,
+    ChatModule,
+    DashboardModule,
+    ContactsModule,
+    GoogleModule,
+  ],
   controllers: [AppController, GoogleController],
-  providers: [AppService, ChatService, GoogleService], 
+  providers: [AppService, ChatService, GoogleService],
 })
 export class AppModule {}

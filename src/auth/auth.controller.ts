@@ -1,11 +1,19 @@
-import { Controller, Post, Body, Res, Req, Get, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Res,
+  Req,
+  Get,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Response, Request } from 'express';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
-    constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) {}
 
   @Post('login')
   async login(
@@ -14,9 +22,6 @@ export class AuthController {
   ) {
     const user = await this.authService.validateUser(body.email, body.password);
     const token = await this.authService.login(user);
-
-
-    
     res.cookie('jwt', token, { httpOnly: true });
     return { message: 'Login realizado com sucesso' };
   }
@@ -32,5 +37,4 @@ export class AuthController {
   getProfile(@Req() req: Request) {
     return req.user;
   }
-
 }

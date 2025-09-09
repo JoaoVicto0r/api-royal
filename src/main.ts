@@ -5,19 +5,20 @@ import { BigIntSerializerInterceptor } from './common/interceptors/bigint-serial
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || [];
 
   app.enableCors({
-  origin: 'https://crm-gamma-red.vercel.app',
-  credentials: true,
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  allowedHeaders: 'Content-Type, Accept, Authorization',
-});
+    origin: allowedOrigins,
+    credentials: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    allowedHeaders: 'Content-Type, Accept, Authorization',
+  });
 
   app.use(cookieParser());
   app.useGlobalInterceptors(new BigIntSerializerInterceptor());
 
-  await app.listen(process.env.PORT || 3001, '0.0.0.0');
 
+  await app.listen(process.env.PORT || 3001, '0.0.0.0');
 
 }
 bootstrap();

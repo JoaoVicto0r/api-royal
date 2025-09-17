@@ -13,6 +13,7 @@ import { ContactsModule } from './contacts/contacts.module';
 import { GoogleService } from './google/google.service';
 import { GoogleController } from './google/google.controller';
 import { GoogleModule } from './google/google.module';
+import { PipelineModule } from './pipeline/pipeline.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { GoogleModule } from './google/google.module';
     DashboardModule,
     ContactsModule,
     GoogleModule,
+    PipelineModule,
   ],
   controllers: [AppController, GoogleController],
   providers: [AppService, ChatService, GoogleService],

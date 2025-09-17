@@ -28,6 +28,7 @@ import { QueuesModule } from './queues/queues.module';
     DashboardModule,
     ContactsModule,
     GoogleModule,
+    PipelineModule,
   ],
   controllers: [AppController, GoogleController],
   providers: [AppService, ChatService, GoogleService],

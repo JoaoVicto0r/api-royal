@@ -1,3 +1,70 @@
+// import { Injectable } from '@nestjs/common';
+// import { PrismaService } from '../prisma/prisma.service';
+
+// @Injectable()
+// export class DashboardService {
+//   constructor(private readonly prisma: PrismaService) {}
+
+//   async getDashboardData() {
+//     // Contagem total de tickets
+//     const totalTickets = await this.prisma.tickets.count();
+
+//     // Contagem de contatos ativos (tickets com status != closed)
+//     const contatosAtivos = await this.prisma.tickets.count({
+//       where: { status: { not: 'closed' } },
+//     });
+
+//     // Tempo médio: média em minutos entre startedAttendanceAt e closedAt
+//     const tickets = await this.prisma.tickets.findMany({
+//       select: { startedAttendanceAt: true, closedAt: true },
+//       where: { startedAttendanceAt: { not: null }, closedAt: { not: null } },
+//     });
+
+//     const tempoMedio =
+//       tickets.length > 0
+//         ? Math.round(
+//             tickets
+//               .filter(t => t.closedAt !== null && t.startedAttendanceAt !== null)
+//               .map(t => Number(t.closedAt! - t.startedAttendanceAt!) / 60000) // converte bigint para number e ms -> minutos
+//               .reduce((a, b) => a + b, 0) / tickets.length,
+//           ) + 'm'
+//         : '0m';
+
+//     // Taxa de resolução: % tickets fechados
+//     const closedTickets = await this.prisma.tickets.count({
+//       where: { status: 'closed' },
+//     });
+//     const taxaResolucao =
+//       totalTickets > 0 ? (closedTickets / totalTickets) * 100 : 0;
+
+//     // Dados para gráficos (exemplos simples)
+//     const weeklyData = await this.prisma.tickets.groupBy({
+//       by: ['status'],
+//       _count: { status: true },
+//     });
+
+//     const statusData = [
+//       { name: 'Pending', value: await this.prisma.tickets.count({ where: { status: 'pending' } }), color: '#facc15' },
+//       { name: 'In Progress', value: await this.prisma.tickets.count({ where: { status: 'in_progress' } }), color: '#4f46e5' },
+//       { name: 'Closed', value: await this.prisma.tickets.count({ where: { status: 'closed' } }), color: '#10b981' },
+//     ];
+
+//     return {
+//       totalTickets,
+//       contatosAtivos,
+//       tempoMedio,
+//       taxaResolucao,
+//       weeklyData: weeklyData.map(w => ({ day: w.status, tickets: w._count.status, messages: 0 })),
+//       hourlyData: [],
+//       statusData,
+//       userAttendanceData: [],
+//       channelData: [],
+//       connectionData: [],
+//       demandData: [],
+//     };
+//   }
+// }
+
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -5,48 +72,85 @@ import { PrismaService } from '../prisma/prisma.service';
 export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getDashboardData() {
+  async getDashboardData(startDate?: Date, endDate?: Date) {
+    // Monta filtro de data opcional
+    const whereClause =
+      startDate && endDate
+        ? {
+            createdAt: {
+              gte: startDate,
+              lte: endDate,
+            },
+          }
+        : {};
+
     // Contagem total de tickets
-    const totalTickets = await this.prisma.tickets.count();
+    const totalTickets = await this.prisma.tickets.count({
+      where: whereClause,
+    });
 
     // Contagem de contatos ativos (tickets com status != closed)
     const contatosAtivos = await this.prisma.tickets.count({
-      where: { status: { not: 'closed' } },
+      where: { status: { not: 'closed' }, ...whereClause },
     });
 
     // Tempo médio: média em minutos entre startedAttendanceAt e closedAt
     const tickets = await this.prisma.tickets.findMany({
       select: { startedAttendanceAt: true, closedAt: true },
-      where: { startedAttendanceAt: { not: null }, closedAt: { not: null } },
+      where: {
+        startedAttendanceAt: { not: null },
+        closedAt: { not: null },
+        ...whereClause,
+      },
     });
 
     const tempoMedio =
       tickets.length > 0
         ? Math.round(
             tickets
-              .filter(t => t.closedAt !== null && t.startedAttendanceAt !== null)
-              .map(t => Number(t.closedAt! - t.startedAttendanceAt!) / 60000) // converte bigint para number e ms -> minutos
+              .filter((t) => t.closedAt && t.startedAttendanceAt)
+              .map((t) => Number(t.closedAt! - t.startedAttendanceAt!) / 60000) // ms → minutos
               .reduce((a, b) => a + b, 0) / tickets.length,
           ) + 'm'
         : '0m';
 
-    // Taxa de resolução: % tickets fechados
+    // Taxa de resolução: % de tickets fechados
     const closedTickets = await this.prisma.tickets.count({
-      where: { status: 'closed' },
+      where: { status: 'closed', ...whereClause },
     });
     const taxaResolucao =
       totalTickets > 0 ? (closedTickets / totalTickets) * 100 : 0;
 
-    // Dados para gráficos (exemplos simples)
+    // Agrupamento por status (simples)
     const weeklyData = await this.prisma.tickets.groupBy({
       by: ['status'],
       _count: { status: true },
+      where: whereClause,
     });
 
+    // Dados para gráfico de status
     const statusData = [
-      { name: 'Pending', value: await this.prisma.tickets.count({ where: { status: 'pending' } }), color: '#facc15' },
-      { name: 'In Progress', value: await this.prisma.tickets.count({ where: { status: 'in_progress' } }), color: '#4f46e5' },
-      { name: 'Closed', value: await this.prisma.tickets.count({ where: { status: 'closed' } }), color: '#10b981' },
+      {
+        name: 'Pending',
+        value: await this.prisma.tickets.count({
+          where: { status: 'pending', ...whereClause },
+        }),
+        color: '#facc15',
+      },
+      {
+        name: 'In Progress',
+        value: await this.prisma.tickets.count({
+          where: { status: 'in_progress', ...whereClause },
+        }),
+        color: '#4f46e5',
+      },
+      {
+        name: 'Closed',
+        value: await this.prisma.tickets.count({
+          where: { status: 'closed', ...whereClause },
+        }),
+        color: '#10b981',
+      },
     ];
 
     return {
@@ -54,7 +158,11 @@ export class DashboardService {
       contatosAtivos,
       tempoMedio,
       taxaResolucao,
-      weeklyData: weeklyData.map(w => ({ day: w.status, tickets: w._count.status, messages: 0 })),
+      weeklyData: weeklyData.map((w) => ({
+        day: w.status,
+        tickets: w._count.status,
+        messages: 0,
+      })),
       hourlyData: [],
       statusData,
       userAttendanceData: [],

@@ -17,20 +17,7 @@ async function bootstrap() {
 
   app.use(cookieParser());
   app.useGlobalInterceptors(new BigIntSerializerInterceptor());
-
-  // Pipes globais para DTOs
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true, // remove campos não declarados nos DTOs
-      forbidNonWhitelisted: true, // lança erro se vier campo não esperado
-      transform: true, // converte string -> number (quando tem @Type(() => Number))
-      transformOptions: {
-        enableImplicitConversion: true, // opcional: tenta converter automaticamente sem precisar sempre de @Type()
-      },
-    }),
-  );
-
-  // await app.listen(process.env.PORT || 3001, '::');
   await app.listen(process.env.PORT || 3001, '0.0.0.0');
+
 }
 bootstrap();

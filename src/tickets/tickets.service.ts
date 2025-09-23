@@ -8,21 +8,21 @@ import { CreateMessageDto } from './dto/create-message.dto';
 export class TicketsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // ✅ Listar todos os tickets com mensagens
+  // Listar todos os tickets com mensagens
   async findAllTickets() {
     return this.prisma.tickets.findMany({
       include: { Messages: true },
     });
   }
 
-  // ✅ Buscar mensagens por ticket
+  // Buscar mensagens por ticket
   async getTicketMessages(ticketId: number) {
     return this.prisma.messages.findMany({
       where: { ticketId },
     });
   }
 
-  // ✅ Criar ticket manualmente (via DTO)
+  // Criar ticket manualmente (via DTO)
   async createTicket(dto: CreateTicketDto) {
     const now = new Date();
     return this.prisma.tickets.create({
@@ -35,7 +35,25 @@ export class TicketsService {
     });
   }
 
-  // ✅ Adicionar mensagem a um ticket
+  // service do kanban 
+
+  async setQueue(id: number, queueId: number) {
+      return this.prisma.tickets.update({
+        where: { id },
+        data: { queueId, updatedAt:new Date() },
+      });
+    }
+
+  //service de atualzação do kanban
+
+  async setInfo(id: number, info: any) {
+    return this.prisma.tickets.update({
+      where: {id},
+      data: { ...info, updateAt: new Date() },
+    });
+  }
+
+  // Adicionar mensagem a um ticket
   async addMessage(ticketId: number, dto: CreateMessageDto) {
     const now = new Date();
     return this.prisma.messages.create({
@@ -51,7 +69,7 @@ export class TicketsService {
     });
   }
 
-  // ✅ Criar ou atualizar ticket com base no número de telefone
+  // Criar ou atualizar ticket com base no número de telefone
   async createOrUpdate(contactNumber: string, text: string, status: string) {
     const now = new Date();
 
@@ -65,7 +83,7 @@ export class TicketsService {
       contact = await this.prisma.contacts.create({
         data: {
           number: contactNumber,
-          name: 'Desconhecido', // ⚠️ ajuste conforme seu modelo
+          name: 'Desconhecido', 
           createdAt: now,
           updatedAt: now,
         },
@@ -108,6 +126,8 @@ export class TicketsService {
         userId: null,
       },
     });
+
+    
 
     return ticket;
   }

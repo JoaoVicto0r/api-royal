@@ -1,5 +1,5 @@
 // src/tickets/tickets.controller.ts
-import { Controller, Get, Param, Post, Body } from '@nestjs/common';
+import { Controller, Get, Param, Post, Body, Put } from '@nestjs/common';
 import { TicketsService } from './tickets.service';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { CreateMessageDto } from './dto/create-message.dto';
@@ -33,4 +33,16 @@ export class TicketsController {
     const ticketId = Number(id);
     return this.ticketsService.addMessage(ticketId, dto);
   }
+  
+  // Rota do kanban
+  @Put(':id/queues')
+  setQueue(@Param('id') id: number, @Body('queueId') queueId: number) {
+    return this.ticketsService.setQueue(+id, queueId);
+  }
+
+  // Rota de atualização do kanban
+  @Put(':id/info')
+    setInfo(@Param('id') id: number, @Body() info: any) {
+      return this.ticketsService.setInfo(+id, info);
+    }
 }

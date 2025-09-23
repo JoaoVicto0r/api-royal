@@ -18,6 +18,7 @@ async function bootstrap() {
   app.use(cookieParser());
   app.useGlobalInterceptors(new BigIntSerializerInterceptor());
 
+
   await app.listen(process.env.PORT || 3001, '0.0.0.0');
 
 }

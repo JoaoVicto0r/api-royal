@@ -15,8 +15,6 @@ import { GoogleController } from './google/google.controller';
 import { GoogleModule } from './google/google.module';
 import { PipelineModule } from './pipeline/pipeline.module';
 import { QueuesModule } from './queues/queues.module';
-
-
 @Module({
   imports: [
     UsersModule,

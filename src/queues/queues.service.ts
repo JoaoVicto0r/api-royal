@@ -10,12 +10,7 @@ export class QueuesService {
   //criação do Kanban 
   async createQueue(dto: CreateQueueDto) {
     const now = new Date();
-    return this.prisma.queues.create({
-      data: {
-          
-          createdAt: now,
-      },
-    });
+    return "this.prisma.queues.create"
   }
 
   findAll() {

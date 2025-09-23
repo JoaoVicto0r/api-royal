@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 
 @Controller('dashboard')
@@ -6,7 +6,13 @@ export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @Get()
-  async getDashboard() {
-    return this.dashboardService.getDashboardData();
+  async getDashboard(
+    @Query('start') start?: string,
+    @Query('end') end?: string,
+  ) {
+    return this.dashboardService.getDashboardData(
+      start ? new Date(start) : undefined,
+      end ? new Date(end) : undefined,
+    );
   }
 }

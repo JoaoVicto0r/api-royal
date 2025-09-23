@@ -14,8 +14,6 @@ import { GoogleService } from './google/google.service';
 import { GoogleController } from './google/google.controller';
 import { GoogleModule } from './google/google.module';
 import { PipelineModule } from './pipeline/pipeline.module';
-import { QueuesModule } from './queues/queues.module';
-
 
 @Module({
   imports: [
@@ -28,6 +26,7 @@ import { QueuesModule } from './queues/queues.module';
     DashboardModule,
     ContactsModule,
     GoogleModule,
+    QueuesModule,
   ],
   controllers: [AppController, GoogleController],
   providers: [AppService, ChatService, GoogleService],
